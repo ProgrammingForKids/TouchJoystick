@@ -171,6 +171,7 @@ void test()
 }
 
 bool obstacle = false;
+char  recent_state='s'; // Stopped
 
 void loop()
 {
@@ -183,6 +184,7 @@ void loop()
       obstacle = true;
    }
 
+
    if ( (!isClose) && obstacle)
    {
       digitalWrite(pinLed, LOW);
@@ -190,69 +192,78 @@ void loop()
       obstacle = false;    
    }
    
+   int BluetoothData='s';
    
    if (BT.available())
    {
-      int BluetoothData=BT.read();
+      BluetoothData=BT.read();
       Serial.print("Received");
       Serial.println(BluetoothData, HEX);
+   }
+   
+    char report='\0';
+    
+    if (recent_state != BluetoothData)
+    {
+        pwm_go(0,0);
+        report='S';
+        delay(100);
+    }
 
-      switch (BluetoothData)
-      {
-        case 'F': case 'f':
-          if (obstacle)
-          {
-            BT.println("Cant go forward, obstacle");
-            pwm_go(0,0);
-            break;
-          }
+    recent_state = BluetoothData;
+
+    switch (BluetoothData)
+    {
+      case 'f':
+        if (obstacle)
+        {
+          BT.println("Cant go forward, obstacle");
           pwm_go(0,0);
-          delay(100);
+          recent_state='s';
+        }
+        else
+        {
           pwm_go(1,1);
-          delay(400);
-          pwm_go(0,0);          
-          break;
+          recent_state='f';
+          report = 'F';
+        }
+        break;
 
-        case 'B': case 'b':
-          pwm_go(0,0);
-          delay(100);
-          pwm_go(-1,-1);
-          delay(400);
-          pwm_go(0,0);          
-          break;
+      case 'b':
+        pwm_go(-1,-1);
+        recent_state='b';
+        report = 'B';
+        break;
 
-        case 'L': case 'l':
-          pwm_go(0,0);
-          delay(100);
-          pwm_go(-1,1);
-          delay(400);
-          pwm_go(0,0);          
-          break;
+      case 'l':
+        pwm_go(-1,1);
+        recent_state='l';
+        report = 'L';
+        break;
 
-        case 'R': case 'r':
-          pwm_go(0,0);
-          delay(100);
-          pwm_go(1,-1);
-          delay(400);
-          pwm_go(0,0);          
-          break;
+      case 'r':
+        pwm_go(1,-1);
+        recent_state='r';
+        report = 'R';
+        break;
 
-        case 'S': case 's':
-          pwm_go(0,0);
-          break;
+      case 's':
+        break;
+ 
+      default:
+        Serial.println("Unknown command");
+        report = 'X';
+        break;
+    }
 
-        default:
-          Serial.println("Unknown command");
-          break;
-      }
-     }
-
-     if (isTooClose())
+     if (report != '\0')
      {
-      pwm_go(0,0);
-      digitalWrite(pinLed, HIGH);
-      BT.println("Obstacle! Emergency stop");
+      BT.println(report);
      }
-      
+     
+     if (recent_state != 's')
+     {
+      delay(1000);
+     }
      delay(100);// prepare for next data ...
 }
