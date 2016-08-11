@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">UI Bluetooth Control</string>
+    <string name="action_settings">Settings</string>
+	<integer name="test_padding_v">25</integer>
+	<integer name="test_padding_h">60</integer>
+</resources>
