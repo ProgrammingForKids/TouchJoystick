@@ -212,6 +212,8 @@ void loop()
 
     recent_state = BluetoothData;
 
+    int aftermath = 100;
+    
     switch (BluetoothData)
     {
       case 'f':
@@ -226,6 +228,7 @@ void loop()
           pwm_go(1,1);
           recent_state='f';
           report = 'F';
+          aftermath = 1000;
         }
         break;
 
@@ -233,18 +236,21 @@ void loop()
         pwm_go(-1,-1);
         recent_state='b';
         report = 'B';
+        aftermath = 1000;
         break;
 
       case 'l':
         pwm_go(-1,1);
         recent_state='l';
         report = 'L';
+        aftermath = 1000;
         break;
 
       case 'r':
         pwm_go(1,-1);
         recent_state='r';
         report = 'R';
+        aftermath = 1000;
         break;
 
       case 's':
@@ -261,9 +267,5 @@ void loop()
       BT.println(report);
      }
      
-     if (recent_state != 's')
-     {
-      delay(1000);
-     }
-     delay(100);// prepare for next data ...
+     delay(aftermath);// prepare for next data ...
 }
