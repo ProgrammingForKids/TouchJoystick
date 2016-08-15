@@ -4,5 +4,6 @@
     <declare-styleable name="FlowLayout">
         <attr name="paddingV" format="string" />
         <attr name="paddingH" format="string" />
-    </declare-styleable>    
+    </declare-styleable>
+
 </resources>
