@@ -1,15 +1,20 @@
 package com.example.bluetooth1;
 
 import java.util.ArrayList;
+
 import com.example.bluetooth1.R;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -26,15 +31,12 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity
 {
-	private static final String		TAG			= "bluetooth1";
 
 	Button							_sendCommands;
 	EditText						_commands;
 
 	BroadcastReceiver				mReceiver	= null;
 	private ListView				_list;
-
-	private ArrayAdapter<String>	_adapter;
 	private BlueToothHelper			_bth;
 	private Dialog					m_dialog;
 
@@ -65,33 +67,33 @@ public class MainActivity extends Activity
 			}
 		});
 
-		// // Create a BroadcastReceiver for ACTION_FOUND
-		// mReceiver = new BroadcastReceiver()
-		// {
-		// public void onReceive(Context context, Intent intent)
-		// {
-		// String action = intent.getAction();
-		// // When discovery finds a device
-		// if (BluetoothDevice.ACTION_FOUND.equals(action))
-		// {
-		// // Get the BluetoothDevice object from the Intent
-		// BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-		// // Add the name and address to an array adapter to show in a ListView
-		// if (null != device)
-		// {
-		//
-		// _arrayList.add(device.getName() + "@" + device.getAddress());
-		// _adapter.notifyDataSetChanged();
-		// Log.e("BLUET", "[" + device.getName() + "]:[" + device.getAddress() + "]");
-		// }
-		// }
-		// }
-		// };
-		// // Register the BroadcastReceiver
-		// IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		// registerReceiver(mReceiver, filter);
+		// Create a BroadcastReceiver for ACTION_FOUND
+		mReceiver = new BroadcastReceiver()
+		{
+			public void onReceive(Context context, Intent intent)
+			{
+				if(null == _bth)
+				{
+					return;
+				}
+				String action = intent.getAction();
+				// When discovery finds a device
+				if (BluetoothDevice.ACTION_FOUND.equals(action))
+				{
+					// Get the BluetoothDevice object from the Intent
+					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+					if (null != device)
+					{
 
-		// ====================================================================
+						_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+						Log.e("BLUET Found", "[" + device.getName() + "]:[" + device.getAddress() + "]");
+					}
+				}
+			}
+		};
+		// Register the BroadcastReceiver
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		registerReceiver(mReceiver, filter);
 
 	}
 
@@ -105,10 +107,12 @@ public class MainActivity extends Activity
 	public void onResume()
 	{
 		super.onResume();
+		_bth.StartDiscovery();
 		_bth.checkBTState();
 		if (_bth.isReady())
 		{
-			ShowPopup();
+			_bth.IsBondedDevice();
+			ShowDevices(_bth.DevicesList());
 		}
 	}
 
@@ -155,20 +159,19 @@ public class MainActivity extends Activity
 		super.onDestroy();
 	}
 
-	void ShowPopup()
+	void ShowDevices(final ArrayList<String> list)
 	{
 		if (null == _bth)
 		{
 			return;
 		}
-		_bth.IsBondedDevice();
 		m_dialog = new Dialog(this);
 		m_dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		m_dialog.setContentView(R.layout.popup_window);
 
 		{// listview
 			_list = (ListView) m_dialog.findViewById(R.id.listView1);
-			_adapter = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, _bth.DevicesList())
+			ArrayAdapter<String>_adapter_bonded = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, list)
 			{
 				public View getView(int position, View convertView, android.view.ViewGroup parent)
 				{
@@ -178,7 +181,7 @@ public class MainActivity extends Activity
 					return view;
 				};
 			};
-			_list.setAdapter(_adapter);
+			_list.setAdapter(_adapter_bonded);
 			_list.setOnItemClickListener(new OnItemClickListener()
 			{
 

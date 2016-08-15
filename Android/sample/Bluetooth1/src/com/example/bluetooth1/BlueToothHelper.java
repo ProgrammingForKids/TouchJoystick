@@ -21,45 +21,57 @@ public class BlueToothHelper
 	static final int			REQUEST_ENABLE_BT	= 1;
 	final static int			RECIEVE_MESSAGE		= 1;
 	final String				TAG					= "BlueToothHelper";
-	final Activity				activity;
-	private BluetoothAdapter	_BluetoothAdapter	= null;
-	private ConnectedThread		mConnectedThread	= null;
-	BluetoothHandler			_handler			= null;
-	private ArrayList<String>	_arrayList			= null;
+	final Activity				_activity;
+	private BluetoothAdapter	_bluetoothAdapter	= null;
+	private ConnectedThread		_connectedThread	= null;
+	private BluetoothHandler	_handler			= null;
+	private ArrayList<String>	_bondedDeviceList	= null;
+	private ArrayList<String>	_foundDeviceList	= null;
 
 	public ArrayList<String> DevicesList()
 	{
-		return _arrayList;
+		return _bondedDeviceList;
 	}
 
 	private static final UUID	MY_UUID	= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
 	public BlueToothHelper(Activity activity)
 	{
-		this.activity = activity;
-		_BluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		this._activity = activity;
+		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		_handler = new BluetoothHandler();
-		_arrayList = new ArrayList<String>();
+		_bondedDeviceList = new ArrayList<String>();
+		_foundDeviceList = new ArrayList<String>();
 
+	}
+
+	public void StartDiscovery()
+	{
+		_bluetoothAdapter.startDiscovery();
 	}
 
 	public void Finalize()
 	{
-		if (null != mConnectedThread)
+		if (null != _connectedThread)
 		{
-			mConnectedThread.Cancel();
+			_connectedThread.Cancel();
 		}
+	}
+
+	public ArrayList<String> FoundDeviceList()
+	{
+		return _foundDeviceList;
 	}
 
 	public boolean checkBTState()
 	{
-		if (_BluetoothAdapter == null)
+		if (_bluetoothAdapter == null)
 		{
 			return false;
 		}
 		else
 		{
-			if (_BluetoothAdapter.isEnabled())
+			if (_bluetoothAdapter.isEnabled())
 			{
 				BluetoothStatus();
 				return true;
@@ -68,7 +80,7 @@ public class BlueToothHelper
 			{
 				// Prompt user to turn on Bluetooth
 				Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-				this.activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
+				this._activity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
 			}
 		}
 		return true;
@@ -76,8 +88,8 @@ public class BlueToothHelper
 
 	void IsBondedDevice()
 	{
-		_arrayList.clear();
-		Set<BluetoothDevice> pairedDevices = _BluetoothAdapter.getBondedDevices();
+		_bondedDeviceList.clear();
+		Set<BluetoothDevice> pairedDevices = _bluetoothAdapter.getBondedDevices();
 		// If there are paired devices
 		if (pairedDevices.size() > 0)
 		{
@@ -85,7 +97,7 @@ public class BlueToothHelper
 			for (BluetoothDevice device : pairedDevices)
 			{
 				String list = device.getName() + "@" + device.getAddress();
-				_arrayList.add(list);
+				_bondedDeviceList.add(list);
 				Log.e(TAG, list);
 			}
 		}
@@ -94,24 +106,24 @@ public class BlueToothHelper
 	void BluetoothStatus()
 	{
 		String status;
-		if (_BluetoothAdapter.isEnabled())
+		if (_bluetoothAdapter.isEnabled())
 		{
-			String mydeviceaddress = _BluetoothAdapter.getAddress();
-			String mydevicename = _BluetoothAdapter.getName();
-			int state = _BluetoothAdapter.getState();
+			String mydeviceaddress = _bluetoothAdapter.getAddress();
+			String mydevicename = _bluetoothAdapter.getName();
+			int state = _bluetoothAdapter.getState();
 			status = mydevicename + " : " + mydeviceaddress + " : " + State(state);
 		}
 		else
 		{
 			status = "Bluetooth Off";
 		}
-		this.activity.getActionBar().setTitle(status);
-		Toast.makeText(this.activity.getBaseContext(), status, Toast.LENGTH_LONG).show();
+		this._activity.getActionBar().setTitle(status);
+		Toast.makeText(this._activity.getBaseContext(), status, Toast.LENGTH_LONG).show();
 	}
 
 	public boolean isReady()
 	{
-		return (_BluetoothAdapter.getState() == BluetoothAdapter.STATE_ON);
+		return (_bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON);
 	}
 
 	String State(int s)
@@ -134,31 +146,31 @@ public class BlueToothHelper
 
 	public void BTGetDevice(final String name_mac)
 	{
-		if (null == _BluetoothAdapter)
+		if (null == _bluetoothAdapter)
 		{
 			return;
 		}
 		int pos = name_mac.lastIndexOf("@");
 		String mac = name_mac.substring(pos + 1);
 		// Set up a pointer to the remote node using it's address.
-		BluetoothDevice device = _BluetoothAdapter.getRemoteDevice(mac);
+		BluetoothDevice device = _bluetoothAdapter.getRemoteDevice(mac);
 		if (null != device)
 		{
-			this.activity.getActionBar().setTitle(name_mac);
+			this._activity.getActionBar().setTitle(name_mac);
 		}
 		else
 		{
-			this.activity.getActionBar().setTitle("No Bluetooth Connection");
+			this._activity.getActionBar().setTitle("No Bluetooth Connection");
 		}
-		mConnectedThread = new ConnectedThread(device);
-		mConnectedThread.start();
+		_connectedThread = new ConnectedThread(device);
+		_connectedThread.start();
 	}
 
 	public void Send(final String comm)
 	{
-		if (null != mConnectedThread)
+		if (null != _connectedThread)
 		{
-			mConnectedThread.Send(comm.toString());
+			_connectedThread.Send(comm.toString());
 		}
 	}
 
@@ -202,7 +214,7 @@ public class BlueToothHelper
 
 		public void run()
 		{
-			_BluetoothAdapter.cancelDiscovery();
+			_bluetoothAdapter.cancelDiscovery();
 			try
 			{
 				mmSocket.connect();
