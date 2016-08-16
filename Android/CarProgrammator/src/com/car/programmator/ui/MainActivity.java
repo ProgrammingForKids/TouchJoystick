@@ -7,8 +7,8 @@ import com.car.programmator.util.*;
 
 import android.app.Activity;
 import android.app.Dialog;
-import android.bluetooth.BluetoothProfile;
 import android.content.ClipData;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -72,10 +72,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			this.index = -1;
 		}
 
-		void Set(View v, int index)
+		Selected Set(View v, int index)
 		{
 			this.view = v;
 			this.index = index;
+			return this;
 		}
 
 		int GetId()
@@ -86,7 +87,54 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			}
 			return -1;
 		}
-	}
+
+		void Select()
+		{
+			if (null != this.view)
+			{
+				this.view.setAlpha((float) 0.5);
+				this.view.setPadding(4, 4, 4, 4);
+				this.view.setBackgroundColor(Color.RED);
+			}
+		}
+
+		void UnSelect()
+		{
+			if (null != this.view)
+			{
+				this.view.setAlpha((float) 1.0);
+				this.view.setPadding(0, 0, 0, 0);
+			}
+		}
+
+		void SetImage(Context context, int recId)
+		{
+			if(null == view)
+			{
+				return;
+			}
+			if (null != context)
+			{
+				Drawable drawable = ContextCompat.getDrawable(context, recId);
+				((ImageView) _performed.view).setImageDrawable(drawable);
+			}
+		}
+
+		void RestoreImage(Context context)
+		{
+			if(null == view)
+			{
+				return;
+			}
+			if (null != context)
+			{
+				int drawableId = _rc.get(view.getId());
+				Drawable drawable = ContextCompat.getDrawable(context, drawableId);
+				((ImageView) _performed.view).setImageDrawable(drawable);
+			}
+		}
+
+	}// class Selected
 
 	LinearLayout			_area_tools		= null;
 	LinearLayout			_current_area	= null;
@@ -140,13 +188,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void onResume()
 	{
 		super.onResume();
-		// _bth.StartDiscovery();
-		// _bth.checkBTState();
-		// if (_bth.isReady())
-		// {
-		// _bth.IsBondedDevice();
-		// ShowDevices(_bth.DevicesList());
-		// }
+		_bth.StartDiscovery();
+		_bth.checkBTState();
+		if (_bth.isReady())
+		{
+			_bth.IsBondedDevice();
+			ShowDevices(_bth.DevicesList());
+		}
 	}
 
 	OnClickListener		_OnClickCommStep		= new OnClickListener()
@@ -157,7 +205,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 														Logger.Log.t("SELECT");
 														if (v.equals(_selected.view))
 														{
-															Select(_selected.view, false);
+															_selected.UnSelect();
 															_command_aria.removeView(_insert.view);
 															_insert.Ini();
 															_selected.Ini();
@@ -169,8 +217,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 															View test = _command_aria.getChildAt(k);
 															if (test.equals(v))
 															{
-																Select(v, true);
-																_selected.Set(v, k);
+																_selected.Set(v, k).Select();
 																_insert.Set(CreateImage(_EMPTY), k);
 																_command_aria.addView(_insert.view, _insert.index);
 																break;
@@ -192,7 +239,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 														{
 															_command_aria.addView(iv, _insert.index);
 															_command_aria.removeView(_insert.view);
-															Select(_selected.view,false);
+															_selected.UnSelect();
 															_insert.Ini();
 															_selected.Ini();
 														}
@@ -282,6 +329,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		int id = item.getItemId();
 		if (id == R.id.action_settings)
 		{
+			_performed.RestoreImage(this);
 			_performed.index = 0;
 			Perform();
 			return true;
@@ -294,9 +342,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 		{
 			_performed.view = _command_aria.getChildAt(_performed.index);
-			char c = Comm(_performed.view.getId());
-			_bth.Send(c);
-			Select(_performed.view, true);
+			_bth.Send(OpCode(_performed.view.getId()));
+			_performed.Select();
 			_performed.index += 1;
 		}
 	}
@@ -305,34 +352,21 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void BTRespose(char c)
 	{
 		Logger.Log.t(c);
-		char vc = Comm(_performed.GetId());
-		if ((vc - c) == 32)
+		char vc = OpCode(_performed.GetId());
+		if ((vc - c) == ('a' - 'b'))
 		{
-			Select(_performed.view, false);
+			_performed.UnSelect();
 			Perform();
 		}
-
-	}
-
-	void Select(View v, boolean b)
-	{
-		if (null != v)
+		else
 		{
-			if (b)
-			{
-				v.setAlpha((float) 0.5);
-				v.setPadding(4, 4, 4, 4);
-				v.setBackgroundColor(Color.RED);
-			}
-			else
-			{
-				v.setAlpha((float) 1.0);
-				v.setPadding(0, 0, 0, 0);
-			}
+			_performed.UnSelect();
+			_performed.SetImage(this, R.drawable.x);
 		}
+
 	}
 
-	char Comm(int c)
+	char OpCode(int c)
 	{
 		switch (c)
 		{
