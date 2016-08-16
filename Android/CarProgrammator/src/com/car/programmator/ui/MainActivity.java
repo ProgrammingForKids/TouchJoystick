@@ -353,7 +353,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		Logger.Log.t(c);
 		char vc = OpCode(_performed.GetId());
-		if ((vc - c) == ('a' - 'b'))
+		if ((vc - c) == ('a' - 'A'))
 		{
 			_performed.UnSelect();
 			Perform();
