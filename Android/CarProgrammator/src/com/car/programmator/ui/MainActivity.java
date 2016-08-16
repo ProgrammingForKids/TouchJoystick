@@ -41,6 +41,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private final int	_FORWARD	= _BACK + 1;
 	private final int	_LEFT		= _BACK + 2;
 	private final int	_RIGHT		= _BACK + 3;
+	private final int	_EMPTY		= _BACK + 4;
 
 	class Item extends HashMap<Integer, Integer>
 	{
@@ -56,6 +57,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			put(_FORWARD, R.drawable.u);
 			put(_LEFT, R.drawable.l);
 			put(_RIGHT, R.drawable.r);
+			put(_EMPTY, R.drawable.empty);
 		}
 	};
 
@@ -91,6 +93,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	TextView				_prompt			= null;
 	Selected				_performed		= new Selected();
 	Selected				_selected		= new Selected();
+	Selected				_insert			= new Selected();
 	private FlowLayout		_command_aria;
 	private BlueToothHelper	_bth			= null;
 
@@ -137,13 +140,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void onResume()
 	{
 		super.onResume();
-		_bth.StartDiscovery();
-		_bth.checkBTState();
-		if (_bth.isReady())
-		{
-			_bth.IsBondedDevice();
-			ShowDevices(_bth.DevicesList());
-		}
+		// _bth.StartDiscovery();
+		// _bth.checkBTState();
+		// if (_bth.isReady())
+		// {
+		// _bth.IsBondedDevice();
+		// ShowDevices(_bth.DevicesList());
+		// }
 	}
 
 	OnClickListener		_OnClickCommStep		= new OnClickListener()
@@ -155,17 +158,22 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 														Select(_selected.view, false);
 														if (v.equals(_selected.view))
 														{
+															_command_aria.removeView(_insert.view);
+															_insert.Ini();
 															_selected.Ini();
 															return;
 														}
-														Select(v, true);
 														int count = _command_aria.getChildCount();
 														for (int k = 0; k < count; ++k)
 														{
 															View test = _command_aria.getChildAt(k);
 															if (test.equals(v))
 															{
+																Select(v, true);
 																_selected.Set(v, k);
+																_insert.Set(CreateImage(_EMPTY), k);
+																_command_aria.addView(_insert.view, _insert.index);
+																break;
 															}
 														}
 													}
@@ -180,9 +188,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 														ImageView iv = CreateImage(v.getId());
 														iv.setOnClickListener(_OnClickCommStep);
 														iv.setOnLongClickListener(myOnLongClickListener);
-														if (-1 < _selected.index)
+														if (-1 < _insert.index)
 														{
-															_command_aria.addView(iv, _selected.index);
+															_command_aria.addView(iv, _insert.index);
 														}
 														else
 														{
@@ -250,8 +258,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		iv.setId(id);
 		iv.setAdjustViewBounds(true);
 		iv.setScaleType(ScaleType.CENTER_INSIDE);
-		// iv.setBackgroundColor(Color.RED);
-		// iv.setPadding(0, 5, 5, 5);
 		return iv;
 	}
 

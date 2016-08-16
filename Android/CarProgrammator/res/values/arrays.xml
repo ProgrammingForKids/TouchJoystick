@@ -6,6 +6,7 @@
         <item>@drawable/u</item>
         <item>@drawable/d</item>
         <item>@drawable/l</item>
-    </array>
+        <item>@drawable/empty</item>
+        </array>
 
 </resources>
