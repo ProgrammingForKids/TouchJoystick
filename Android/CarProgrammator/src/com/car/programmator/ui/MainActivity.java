@@ -155,9 +155,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 													public void onClick(View v)
 													{
 														Logger.Log.t("SELECT");
-														Select(_selected.view, false);
 														if (v.equals(_selected.view))
 														{
+															Select(_selected.view, false);
 															_command_aria.removeView(_insert.view);
 															_insert.Ini();
 															_selected.Ini();
@@ -191,6 +191,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 														if (-1 < _insert.index)
 														{
 															_command_aria.addView(iv, _insert.index);
+															_command_aria.removeView(_insert.view);
+															Select(_selected.view,false);
+															_insert.Ini();
+															_selected.Ini();
 														}
 														else
 														{
