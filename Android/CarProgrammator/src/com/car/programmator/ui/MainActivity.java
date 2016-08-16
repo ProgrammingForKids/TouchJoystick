@@ -6,6 +6,7 @@ import com.car.programmator.util.Logger;
 
 import android.app.Activity;
 import android.content.ClipData;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -36,23 +37,42 @@ public class MainActivity extends Activity
 		private static final long serialVersionUID = 1L;
 	}// class Item
 
-	private Item		_rc				= new Item()
-										{
-											private static final long serialVersionUID = 1L;
+	private Item _rc = new Item()
+	{
+		private static final long serialVersionUID = 1L;
 
-											{
-												put(_DOWN, R.drawable.d);
-												put(_UP, R.drawable.u);
-												put(_LEFT, R.drawable.l);
-												put(_RIGHT, R.drawable.r);
-											}
-										};
+		{
+			put(_DOWN, R.drawable.d);
+			put(_UP, R.drawable.u);
+			put(_LEFT, R.drawable.l);
+			put(_RIGHT, R.drawable.r);
+		}
+	};
+
+	class Selected
+	{
+		public View	view	= null;
+		public int	index	= -1;
+
+		void Ini()
+		{
+			this.view = null;
+			this.index = -1;
+		}
+
+		void Set(View v, int index)
+		{
+			this.view = v;
+			this.index = index;
+		}
+	}
 
 	LinearLayout		_area_tools		= null;
 	LinearLayout		_current_area	= null;
 	ImageView			_iv_prev		= null;
-	TextView			prompt			= null;
-	private FlowLayout	test;
+	TextView			_prompt			= null;
+	Selected			_selected		= new Selected();
+	private FlowLayout	_command_aria;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -60,20 +80,20 @@ public class MainActivity extends Activity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
-		test = (FlowLayout) findViewById(R.id.test);
-		test.setOnDragListener(myOnDragListener);
+		_command_aria = (FlowLayout) findViewById(R.id.test);
+		_command_aria.setOnDragListener(myOnDragListener);
 
-		prompt = (TextView) findViewById(R.id.prompt);
+		_prompt = (TextView) findViewById(R.id.prompt);
 		// make TextView scrollable
-		prompt.setMovementMethod(new ScrollingMovementMethod());
+		_prompt.setMovementMethod(new ScrollingMovementMethod());
 		// clear prompt area if LongClick
-		prompt.setOnLongClickListener(new OnLongClickListener()
+		_prompt.setOnLongClickListener(new OnLongClickListener()
 		{
 
 			@Override
 			public boolean onLongClick(View v)
 			{
-				prompt.setText("");
+				_prompt.setText("");
 				return true;
 			}
 		});
@@ -90,6 +110,30 @@ public class MainActivity extends Activity
 
 	}
 
+	OnClickListener		_OnClickCommStep		= new OnClickListener()
+												{
+													@Override
+													public void onClick(View v)
+													{
+														Logger.Log.t("SELECT");
+														Select(_selected.view, false);
+														if (v.equals(_selected.view))
+														{
+															_selected.Ini();
+															return;
+														}
+														Select(v, true);
+														int count = _command_aria.getChildCount();
+														for (int k = 0; k < count; ++k)
+														{
+															View test = _command_aria.getChildAt(k);
+															if (test.equals(v))
+															{
+																_selected.Set(v, k);
+															}
+														}
+													}
+												};
 	OnClickListener		_OnClickListener		= new OnClickListener()
 												{
 
@@ -97,9 +141,17 @@ public class MainActivity extends Activity
 													public void onClick(View v)
 													{
 														Logger.Log.t("longTouch", "ID", v.getId());
-														ImageView i = CreateImage(v.getId());
-														i.setOnLongClickListener(myOnLongClickListener);
-														test.addView(i);
+														ImageView iv = CreateImage(v.getId());
+														iv.setOnClickListener(_OnClickCommStep);
+														iv.setOnLongClickListener(myOnLongClickListener);
+														if (-1 < _selected.index)
+														{
+															_command_aria.addView(iv, _selected.index);
+														}
+														else
+														{
+															_command_aria.addView(iv);
+														}
 													}
 												};
 
@@ -134,8 +186,8 @@ public class MainActivity extends Activity
 															case DragEvent.ACTION_DROP:
 																break;
 															case DragEvent.ACTION_DRAG_ENDED:
-																View view1 = (View) event.getLocalState();
-																test.removeView(view1);
+																View view = (View) event.getLocalState();
+																_command_aria.removeView(view);
 															default:
 																break;
 														}
@@ -188,4 +240,23 @@ public class MainActivity extends Activity
 		}
 		return super.onOptionsItemSelected(item);
 	}
+
+	void Select(View v, boolean b)
+	{
+		if (null != v)
+		{
+			if (b)
+			{
+				v.setAlpha((float) 0.5);
+				v.setPadding(4, 4, 4, 4);
+				v.setBackgroundColor(Color.RED);
+			}
+			else
+			{
+				v.setAlpha((float) 1.0);
+				v.setPadding(0, 0, 0, 0);
+			}
+		}
+	}
+
 }
