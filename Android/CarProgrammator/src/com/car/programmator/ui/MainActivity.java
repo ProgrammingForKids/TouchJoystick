@@ -71,8 +71,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		private static final long serialVersionUID = 1L;
 
 		{
-			put(_BACK, R.drawable.d);
-			put(_FORWARD, R.drawable.u);
+			put(_FORWARD, R.drawable.f);
+			put(_BACK, R.drawable.b);
 			put(_LEFT, R.drawable.l);
 			put(_RIGHT, R.drawable.r);
 			put(_EMPTY, R.drawable.empty);
@@ -111,8 +111,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			if (null != this.view)
 			{
 				this.view.setAlpha((float) 0.5);
-				this.view.setPadding(4, 4, 4, 4);
-				this.view.setBackgroundColor(Color.RED);
+				this.view.setPadding(6, 6, 6, 6);
+				this.view.setBackgroundColor(Color.BLUE);
+				Logger.Log.t("SELECT");
 			}
 		}
 
@@ -120,6 +121,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		{
 			if (null != this.view)
 			{
+				Logger.Log.t("UN-SELECT");
+				// this.view.getPaddingBottom()
 				this.view.setAlpha((float) 1.0);
 				this.view.setPadding(0, 0, 0, 0);
 			}
@@ -160,7 +163,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	Selected				_performed		= new Selected();
 	Selected				_selected		= new Selected();
 	Selected				_insert			= new Selected();
-	private FlowLayout		_command_aria;
+	private FlowLayout		_command_aria	= null;
 	private BlueToothHelper	_bth			= null;
 
 	@Override
@@ -371,8 +374,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 		{
 			_performed.view = _command_aria.getChildAt(_performed.index);
-			_bth.Send(opCodes.get(_performed.view.getId()));
 			_performed.Select();
+			_bth.Send(opCodes.get(_performed.view.getId()));
 			_performed.index += 1;
 		}
 	}

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
+import com.car.programmator.ui.R;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -68,6 +70,8 @@ public class BlueToothHelper
 		}
 		String title = _device_name + " : "+ ((ret)?"Connected":"Disconnected");
 		this._activity.getActionBar().setTitle(title);
+		int resId = (ret)? R.drawable.green:R.drawable.red;
+		this._activity.getActionBar().setIcon(resId);
 		return ret;
 	}
 
@@ -277,6 +281,7 @@ public class BlueToothHelper
 				{
 					Logger.Log.t("mmSocket.close()", "is failed");
 				}
+				mCallback.BTRespose(Callback.SOCKET_CLOSED);
 				return;
 			}
 			byte[] buffer = new byte[256]; // buffer store for the stream
