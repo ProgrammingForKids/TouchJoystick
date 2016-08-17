@@ -31,6 +31,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ImageView.ScaleType;
 
@@ -213,19 +214,20 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void onResume()
 	{
 		super.onResume();
-		if (null == _bth)
+		if (null != _bth)
 		{
-			return;
+			_bth.isConnected();
 		}
-		if (!_bth.isConnected())
+	}
+
+	private void BTConnect()
+	{
+		_bth.StartDiscovery();
+		_bth.checkBTState();
+		if (_bth.isReady())
 		{
-			_bth.StartDiscovery();
-			_bth.checkBTState();
-			if (_bth.isReady())
-			{
-				_bth.IsBondedDevice();
-				ShowDevices(_bth.DevicesList());
-			}
+			_bth.IsBondedDevice();
+			ShowDevices(_bth.DevicesList());
 		}
 	}
 
@@ -361,16 +363,23 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		int id = item.getItemId();
 		if (id == R.id.action_settings)
 		{
+			BTConnect();
+		}
+		else if (id == R.id.action_start)
+		{
 			_performed.RestoreImage(this);
 			_performed.index = 0;
 			Perform();
-			return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
 
 	void Perform()
 	{
+		if (null != _insert.view)
+		{
+			return;
+		}
 		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 		{
 			_performed.view = _command_aria.getChildAt(_performed.index);
@@ -384,13 +393,16 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void BTRespose(char c)
 	{
 		Logger.Log.t(c);
+		Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
 		char pc = opCodes.get(_performed.GetId());
 		if ((pc - c) == ('a' - 'A'))
 		{
 			_performed.UnSelect();
 			Perform();
 		}
-		else if ((SOCKET_CLOSED == c) || STOP_PERFORMANCE == c)
+		else if (SOCKET_CLOSED == c
+				|| STOP_PERFORMANCE == c
+				|| CONNECT_ERROR == c)
 		{
 			_performed.UnSelect();
 		}

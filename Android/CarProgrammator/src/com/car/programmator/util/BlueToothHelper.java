@@ -38,6 +38,7 @@ public class BlueToothHelper
 
 	public interface Callback
 	{
+		final char	CONNECT_ERROR		= 'Y';
 		final char	SOCKET_CLOSED		= 'Z';
 		final char	STOP_PERFORMANCE	= 'S';
 
@@ -68,9 +69,9 @@ public class BlueToothHelper
 		{
 			ret = _connectedThread.isConnected();
 		}
-		String title = _device_name + " : "+ ((ret)?"Connected":"Disconnected");
+		String title = _device_name;// + " : " + ((ret) ? "Connected" : "Disconnected");
 		this._activity.getActionBar().setTitle(title);
-		int resId = (ret)? R.drawable.green:R.drawable.red;
+		int resId = (ret) ? R.drawable.green : R.drawable.red;
 		this._activity.getActionBar().setIcon(resId);
 		return ret;
 	}
@@ -201,7 +202,15 @@ public class BlueToothHelper
 		}
 		_connectedThread = new ConnectedThread(device);
 		_connectedThread.start();
-		isConnected();
+		new android.os.Handler().postDelayed(
+				new Runnable()
+				{
+					public void run()
+					{
+						isConnected();
+					}
+				},
+				2000);
 	}
 
 	public void Send(final String comm)
@@ -210,6 +219,10 @@ public class BlueToothHelper
 		{
 			_connectedThread.Send(comm);
 		}
+		else
+		{
+			mCallback.BTRespose(Callback.CONNECT_ERROR);
+		}
 	}
 
 	public void Send(final char c)
@@ -217,6 +230,10 @@ public class BlueToothHelper
 		if (null != _connectedThread)
 		{
 			_connectedThread.Send(c);
+		}
+		else
+		{
+			mCallback.BTRespose(Callback.CONNECT_ERROR);
 		}
 	}
 
@@ -281,7 +298,7 @@ public class BlueToothHelper
 				{
 					Logger.Log.t("mmSocket.close()", "is failed");
 				}
-				mCallback.BTRespose(Callback.SOCKET_CLOSED);
+				mCallback.BTRespose(Callback.CONNECT_ERROR);
 				return;
 			}
 			byte[] buffer = new byte[256]; // buffer store for the stream
@@ -326,8 +343,6 @@ public class BlueToothHelper
 			catch (IOException e)
 			{
 				mCallback.BTRespose(Callback.SOCKET_CLOSED);
-				// socket closed
-
 				Logger.Log.t(" Send(char)", e.getMessage());
 			}
 		}

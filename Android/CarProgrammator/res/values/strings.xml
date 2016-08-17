@@ -2,9 +2,9 @@
 <resources>
 
     <string name="app_name">CarProgrammator</string>
-    <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
-
+    <string name="action_start">Start</string>
+    
     <integer name="_padding_v">60</integer>
     <integer name="_padding_h">16</integer>
 
