@@ -13,20 +13,19 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Handler;
-import android.util.Log;
-import android.widget.Toast;
 
 public class BlueToothHelper
 {
 	static final int			REQUEST_ENABLE_BT	= 1;
 	final static int			RECIEVE_MESSAGE		= 1;
-	final String				TAG					= "BlueToothHelper";
+	private final String		device_name			= "Unknown";
 	final Activity				_activity;
 	private BluetoothAdapter	_bluetoothAdapter	= null;
 	private ConnectedThread		_connectedThread	= null;
 	private BluetoothHandler	_handler			= null;
 	private ArrayList<String>	_bondedDeviceList	= null;
 	private ArrayList<String>	_foundDeviceList	= null;
+	private String				_device_name		= device_name;
 
 	public ArrayList<String> DevicesList()
 	{
@@ -37,6 +36,9 @@ public class BlueToothHelper
 
 	public interface Callback
 	{
+		final char	SOCKET_CLOSED		= 'Z';
+		final char	STOP_PERFORMANCE	= 'S';
+
 		void BTRespose(char c);
 	}
 
@@ -57,6 +59,18 @@ public class BlueToothHelper
 
 	}
 
+	public boolean isConnected()
+	{
+		boolean ret = false;
+		if (null != _connectedThread)
+		{
+			ret = _connectedThread.isConnected();
+		}
+		String title = _device_name + " : "+ ((ret)?"Connected":"Disconnected");
+		this._activity.getActionBar().setTitle(title);
+		return ret;
+	}
+
 	public void StartDiscovery()
 	{
 		_bluetoothAdapter.startDiscovery();
@@ -64,6 +78,7 @@ public class BlueToothHelper
 
 	public void Finalize()
 	{
+		_device_name = device_name;
 		if (null != _connectedThread)
 		{
 			_connectedThread.Cancel();
@@ -110,7 +125,7 @@ public class BlueToothHelper
 			{
 				String list = device.getName() + "@" + device.getAddress();
 				_bondedDeviceList.add(list);
-				Log.e(TAG, list);
+				Logger.Log.t("BondedDevice", list);
 			}
 		}
 	}
@@ -129,8 +144,9 @@ public class BlueToothHelper
 		{
 			status = "Bluetooth Off";
 		}
-		this._activity.getActionBar().setTitle(status);
-		Toast.makeText(this._activity.getBaseContext(), status, Toast.LENGTH_LONG).show();
+		Logger.Log.t("BluetoothStatus", status);
+		// this._activity.getActionBar().setTitle(status);
+		// Toast.makeText(this._activity.getBaseContext(), status, Toast.LENGTH_LONG).show();
 	}
 
 	public boolean isReady()
@@ -163,19 +179,25 @@ public class BlueToothHelper
 			return;
 		}
 		int pos = name_mac.lastIndexOf("@");
+		if (pos == -1)
+		{
+			return;
+		}
 		String mac = name_mac.substring(pos + 1);
 		// Set up a pointer to the remote node using it's address.
 		BluetoothDevice device = _bluetoothAdapter.getRemoteDevice(mac);
 		if (null != device)
 		{
-			this._activity.getActionBar().setTitle(name_mac);
+			_device_name = device.getName();
 		}
 		else
 		{
+			_device_name = device_name;
 			this._activity.getActionBar().setTitle("No Bluetooth Connection");
 		}
 		_connectedThread = new ConnectedThread(device);
 		_connectedThread.start();
+		isConnected();
 	}
 
 	public void Send(final String comm)
@@ -225,8 +247,13 @@ public class BlueToothHelper
 				}
 				catch (IOException e)
 				{
+					Logger.Log.t("mmSocket.*Stream()", "is failed");
 				}
 
+			}
+			else
+			{
+				Logger.Log.t("mmSocket", "is null");
 			}
 			mmInStream = tmpIn;
 			mmOutStream = tmpOut;
@@ -241,12 +268,14 @@ public class BlueToothHelper
 			}
 			catch (IOException connectException)
 			{
+				Logger.Log.t("mmSocket.connect()", "is failed");
 				try
 				{
 					mmSocket.close();
 				}
 				catch (IOException closeException)
 				{
+					Logger.Log.t("mmSocket.close()", "is failed");
 				}
 				return;
 			}
@@ -269,6 +298,15 @@ public class BlueToothHelper
 			}
 		}
 
+		public boolean isConnected()
+		{
+			if (null == mmSocket)
+			{
+				return false;
+			}
+			return mmSocket.isConnected();
+		}
+
 		/* Call this from the main activity to send data to the remote device */
 		public void Send(char c)
 		{
@@ -282,7 +320,10 @@ public class BlueToothHelper
 			}
 			catch (IOException e)
 			{
-				Log.e(TAG, e.getMessage());
+				mCallback.BTRespose(Callback.SOCKET_CLOSED);
+				// socket closed
+
+				Logger.Log.t(" Send(char)", e.getMessage());
 			}
 		}
 
@@ -295,7 +336,7 @@ public class BlueToothHelper
 			}
 			catch (IOException e)
 			{
-				Log.e(TAG, e.getMessage());
+				Logger.Log.t("Send(String)", e.getMessage());
 			}
 		}
 
@@ -310,7 +351,7 @@ public class BlueToothHelper
 			{
 			}
 		}
-	}// ConnectedThread
+	}// class ConnectedThread
 
 	private static class BluetoothHandler extends Handler
 	{

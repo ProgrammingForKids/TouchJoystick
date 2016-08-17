@@ -43,6 +43,24 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private final int	_RIGHT		= _BACK + 3;
 	private final int	_EMPTY		= _BACK + 4;
 
+	class OpCode extends HashMap<Integer, Character>
+	{
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	private OpCode opCodes = new OpCode()
+	{
+		private static final long serialVersionUID = 1L;
+
+		{
+			put(_BACK, 'b');
+			put(_FORWARD, 'f');
+			put(_LEFT, 'l');
+			put(_RIGHT, 'r');
+		}
+	};
+
 	class Item extends HashMap<Integer, Integer>
 	{
 		private static final long serialVersionUID = 1L;
@@ -109,7 +127,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 		void SetImage(Context context, int recId)
 		{
-			if(null == view)
+			if (null == view)
 			{
 				return;
 			}
@@ -122,7 +140,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 		void RestoreImage(Context context)
 		{
-			if(null == view)
+			if (null == view)
 			{
 				return;
 			}
@@ -158,19 +176,23 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		_command_aria.setOnDragListener(myOnDragListener);
 
 		_prompt = (TextView) findViewById(R.id.prompt);
-		// make TextView scrollable
-		_prompt.setMovementMethod(new ScrollingMovementMethod());
-		// clear prompt area if LongClick
-		_prompt.setOnLongClickListener(new OnLongClickListener()
+		_prompt.setVisibility(View.GONE);
+		if (_prompt.isShown())
 		{
-
-			@Override
-			public boolean onLongClick(View v)
+			// make TextView scrollable
+			_prompt.setMovementMethod(new ScrollingMovementMethod());
+			// clear prompt area if LongClick
+			_prompt.setOnLongClickListener(new OnLongClickListener()
 			{
-				_prompt.setText("");
-				return true;
-			}
-		});
+
+				@Override
+				public boolean onLongClick(View v)
+				{
+					_prompt.setText("");
+					return true;
+				}
+			});
+		}
 		Store(_FORWARD);
 		Store(_BACK);
 		Store(_LEFT);
@@ -188,12 +210,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void onResume()
 	{
 		super.onResume();
-		_bth.StartDiscovery();
-		_bth.checkBTState();
-		if (_bth.isReady())
+		if (null == _bth)
 		{
-			_bth.IsBondedDevice();
-			ShowDevices(_bth.DevicesList());
+			return;
+		}
+		if (!_bth.isConnected())
+		{
+			_bth.StartDiscovery();
+			_bth.checkBTState();
+			if (_bth.isReady())
+			{
+				_bth.IsBondedDevice();
+				ShowDevices(_bth.DevicesList());
+			}
 		}
 	}
 
@@ -342,7 +371,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 		{
 			_performed.view = _command_aria.getChildAt(_performed.index);
-			_bth.Send(OpCode(_performed.view.getId()));
+			_bth.Send(opCodes.get(_performed.view.getId()));
 			_performed.Select();
 			_performed.index += 1;
 		}
@@ -352,11 +381,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void BTRespose(char c)
 	{
 		Logger.Log.t(c);
-		char vc = OpCode(_performed.GetId());
-		if ((vc - c) == ('a' - 'A'))
+		char pc = opCodes.get(_performed.GetId());
+		if ((pc - c) == ('a' - 'A'))
 		{
 			_performed.UnSelect();
 			Perform();
+		}
+		else if ((SOCKET_CLOSED == c) || STOP_PERFORMANCE == c)
+		{
+			_performed.UnSelect();
 		}
 		else
 		{
@@ -364,24 +397,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			_performed.SetImage(this, R.drawable.x);
 		}
 
-	}
-
-	char OpCode(int c)
-	{
-		switch (c)
-		{
-			case _BACK:
-				return 'b';
-			case _FORWARD:
-				return 'f';
-			case _LEFT:
-				return 'l';
-			case _RIGHT:
-				return 'r';
-			default:
-				return 0;
-
-		}
 	}
 
 	void ShowDevices(final ArrayList<String> list)
@@ -393,8 +408,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		final Dialog dialog = new Dialog(this);
 		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		dialog.setContentView(R.layout.popup_window);
-
-		{// listview
+		{
 			ListView listview = (ListView) dialog.findViewById(R.id.listView1);
 			ArrayAdapter<String> _adapter_bonded = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, list)
 			{
@@ -403,6 +417,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 					View view = super.getView(position, convertView, parent);
 					TextView tv = (TextView) view.findViewById(android.R.id.text1);
 					tv.setTextColor(Color.BLACK);
+					tv.setPadding(8, 16, 2, 16);
 					return view;
 				};
 			};
@@ -427,6 +442,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		TextView item = (TextView) dialog.findViewById(R.id.dismiss);
 		OnClickListener clickListener = new OnClickListener()
 		{
+
 			public void onClick(View v)
 			{
 				dialog.dismiss();
@@ -434,6 +450,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		};
 		item.setOnClickListener(clickListener);
 		dialog.show();
+
 		// Size & Position
 		Window window = dialog.getWindow();
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
