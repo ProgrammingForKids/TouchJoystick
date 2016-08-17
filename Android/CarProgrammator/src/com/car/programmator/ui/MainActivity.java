@@ -6,8 +6,8 @@ import com.car.programmator.util.*;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.ClipData;
-import android.content.Context;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -38,121 +38,43 @@ import android.widget.ImageView.ScaleType;
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 
-	private final int				_BACK		= 107;
-	private final int				_FORWARD	= _BACK + 1;
-	private final int				_LEFT		= _BACK + 2;
-	private final int				_RIGHT		= _BACK + 3;
-	private final int				_EMPTY		= _BACK + 4;
+	private final int				_BACK			= 107;
+	private final int				_FORWARD		= _BACK + 1;
+	private final int				_LEFT			= _BACK + 2;
+	private final int				_RIGHT			= _BACK + 3;
+	private final int				_EMPTY			= _BACK + 4;
 
-	private SparseArray<Character>	opCodes		= new SparseArray<Character>()
-												{
-
+	private SparseArray<Character>	opCodes			= new SparseArray<Character>()
 													{
-														put(_BACK, 'b');
-														put(_FORWARD, 'f');
-														put(_LEFT, 'l');
-														put(_RIGHT, 'r');
-													}
-												};
 
-	private SparseIntArray			_rc			= new SparseIntArray()
-												{
+														{
+															put(_BACK, 'b');
+															put(_FORWARD, 'f');
+															put(_LEFT, 'l');
+															put(_RIGHT, 'r');
+														}
+													};
 
+	private SparseIntArray			_rc				= new SparseIntArray()
 													{
-														put(_FORWARD, R.drawable.f);
-														put(_BACK, R.drawable.b);
-														put(_LEFT, R.drawable.l);
-														put(_RIGHT, R.drawable.r);
-														put(_EMPTY, R.drawable.empty);
-													}
-												};
 
-	class Selected
-	{
-		public View	view	= null;
-		public int	index	= -1;
+														{
+															put(_FORWARD, R.drawable.f);
+															put(_BACK, R.drawable.b);
+															put(_LEFT, R.drawable.l);
+															put(_RIGHT, R.drawable.r);
+															put(_EMPTY, R.drawable.empty);
+														}
+													};
 
-		void Ini()
-		{
-			this.view = null;
-			this.index = -1;
-		}
-
-		Selected Set(View v, int index)
-		{
-			this.view = v;
-			this.index = index;
-			return this;
-		}
-
-		int GetId()
-		{
-			if (null != view)
-			{
-				return view.getId();
-			}
-			return -1;
-		}
-
-		void Select()
-		{
-			if (null != this.view)
-			{
-				this.view.setAlpha((float) 0.5);
-				this.view.setPadding(6, 6, 6, 6);
-				this.view.setBackgroundColor(Color.BLUE);
-				Logger.Log.t("SELECT");
-			}
-		}
-
-		void UnSelect()
-		{
-			if (null != this.view)
-			{
-				Logger.Log.t("UN-SELECT");
-				// this.view.getPaddingBottom()
-				this.view.setAlpha((float) 1.0);
-				this.view.setPadding(0, 0, 0, 0);
-			}
-		}
-
-		void SetImage(Context context, int recId)
-		{
-			if (null == view)
-			{
-				return;
-			}
-			if (null != context)
-			{
-				Drawable drawable = ContextCompat.getDrawable(context, recId);
-				((ImageView) _performed.view).setImageDrawable(drawable);
-			}
-		}
-
-		void RestoreImage(Context context)
-		{
-			if (null == view)
-			{
-				return;
-			}
-			if (null != context)
-			{
-				int drawableId = _rc.get(view.getId());
-				Drawable drawable = ContextCompat.getDrawable(context, drawableId);
-				((ImageView) _performed.view).setImageDrawable(drawable);
-			}
-		}
-
-	}// class Selected
-
-	LinearLayout			_area_tools		= null;
-	LinearLayout			_current_area	= null;
-	TextView				_prompt			= null;
-	Selected				_performed		= new Selected();
-	Selected				_selected		= new Selected();
-	Selected				_insert			= new Selected();
-	private FlowLayout		_command_aria	= null;
-	private BlueToothHelper	_bth			= null;
+	LinearLayout					_area_tools		= null;
+	LinearLayout					_current_area	= null;
+	TextView						_prompt			= null;
+	ImageHelper						_performed		= new ImageHelper();
+	ImageHelper						_selected		= new ImageHelper();
+	ImageHelper						_insert			= new ImageHelper();
+	private FlowLayout				_command_aria	= null;
+	private BlueToothHelper			_bth			= null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -161,7 +83,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		setContentView(R.layout.activity_main);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
-
+		//getActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#CECECE")));
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
 		_command_aria = (FlowLayout) findViewById(R.id.test);
 		_command_aria.setOnDragListener(myOnDragListener);
@@ -338,6 +260,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		MenuItem item = menu.getItem(1);
+		//item.setTitle("Start");
+		item.setIcon(R.drawable.start);
 		return true;
 	}
 
@@ -361,7 +286,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private void StartPerform()
 	{
-		_performed.RestoreImage(this);
+		_performed.RestoreImage(this, _rc);
 		_performed.index = 0;
 		Perform();
 	}
