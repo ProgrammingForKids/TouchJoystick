@@ -1,8 +1,6 @@
 package com.car.programmator.ui;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-
 import com.car.programmator.util.*;
 
 import android.app.Activity;
@@ -14,6 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
 import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.Menu;
@@ -38,47 +38,34 @@ import android.widget.ImageView.ScaleType;
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 
-	private final int	_BACK		= 107;
-	private final int	_FORWARD	= _BACK + 1;
-	private final int	_LEFT		= _BACK + 2;
-	private final int	_RIGHT		= _BACK + 3;
-	private final int	_EMPTY		= _BACK + 4;
+	private final int				_BACK		= 107;
+	private final int				_FORWARD	= _BACK + 1;
+	private final int				_LEFT		= _BACK + 2;
+	private final int				_RIGHT		= _BACK + 3;
+	private final int				_EMPTY		= _BACK + 4;
 
-	class OpCode extends HashMap<Integer, Character>
-	{
+	private SparseArray<Character>	opCodes		= new SparseArray<Character>()
+												{
 
-		private static final long serialVersionUID = 1L;
-	}
+													{
+														put(_BACK, 'b');
+														put(_FORWARD, 'f');
+														put(_LEFT, 'l');
+														put(_RIGHT, 'r');
+													}
+												};
 
-	private OpCode opCodes = new OpCode()
-	{
-		private static final long serialVersionUID = 1L;
+	private SparseIntArray			_rc			= new SparseIntArray()
+												{
 
-		{
-			put(_BACK, 'b');
-			put(_FORWARD, 'f');
-			put(_LEFT, 'l');
-			put(_RIGHT, 'r');
-		}
-	};
-
-	class Item extends HashMap<Integer, Integer>
-	{
-		private static final long serialVersionUID = 1L;
-	}// class Item
-
-	private Item _rc = new Item()
-	{
-		private static final long serialVersionUID = 1L;
-
-		{
-			put(_FORWARD, R.drawable.f);
-			put(_BACK, R.drawable.b);
-			put(_LEFT, R.drawable.l);
-			put(_RIGHT, R.drawable.r);
-			put(_EMPTY, R.drawable.empty);
-		}
-	};
+													{
+														put(_FORWARD, R.drawable.f);
+														put(_BACK, R.drawable.b);
+														put(_LEFT, R.drawable.l);
+														put(_RIGHT, R.drawable.r);
+														put(_EMPTY, R.drawable.empty);
+													}
+												};
 
 	class Selected
 	{
@@ -367,11 +354,16 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 		else if (id == R.id.action_start)
 		{
-			_performed.RestoreImage(this);
-			_performed.index = 0;
-			Perform();
+			StartPerform();
 		}
 		return super.onOptionsItemSelected(item);
+	}
+
+	private void StartPerform()
+	{
+		_performed.RestoreImage(this);
+		_performed.index = 0;
+		Perform();
 	}
 
 	void Perform()
