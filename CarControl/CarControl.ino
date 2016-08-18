@@ -1,91 +1,200 @@
-const unsigned long MAX_DISTANCE = 15;
+const unsigned long MAX_DISTANCE = 35;
 const unsigned long MAX_DURATION = MAX_DISTANCE*1000*1000*2/100/340;
 
 #include <SoftwareSerial.h>// import the serial library
 
+/*
+Connections:
+Motor driver
+- Pin 3 ---> PWMA
+- Pin 4 ---> AIN2
+- Pin 5 ---> AIN1
+- Pin 6 ---> STBY
+- Pin 7 ---> BIN1
+- Pin 8 ---> BIN2
+- Pin 9 ---> PWMB
 
-//Pins 5 and 6: controlled by timer0 (8 bits)
-//Pins 9 and 10: controlled by timer1 (16 bits)
-//Pins 11 and 3: controlled by timer2 (8 bits)
+- Motor 1: A01 and A02
+- Motor 2: B01 and B02
 
-//Define Pins
+*/
 
-//Motor A
-int pinA1 = 2;    //Yellow
-int pinA2 = 3;    // Green
+//Define the Pins
 
-//Motor B
-int pinB1 = 4;    // Blue
-int pinB2 = 5;    // Purple->Orange
+//Motor 1
+int pinPWMA = 3; //Speed
+int pinAIN2 = 4; //Direction
+int pinAIN1 = 5; //Direction
 
+//Standby
+int pinSTBY = 6;
+
+//Motor 2
+int pinBIN1 = 7; //Direction
+int pinBIN2 = 8; //Direction
+int pinPWMB = 9; //Speed
+
+//Constants to help remember the parameters
+static boolean turnCW = 0;  //for motorDrive function
+static boolean turnCCW = 1; //for motorDrive function
+static boolean motor1 = 0;  //for motorDrive, motorStop, motorBrake functions
+static boolean motor2 = 1;  //for motorDrive, motorStop, motorBrake functions
 
 // Bluetooth
-int pinTx = 7; // Yellow
-int pinRx = 8; // Green
-// int pinEn=9; // Brown
+int pinTx = 12; // purple
+int pinRx = 2; // orange
+// ground - blk
+// vcc - white, gray - ground
 
 //Ultrasonic sensor
-int pinEcho = 11; // White
-int pinTrig = 12; // Blue
-
-
+int pinEcho = 10; // yellow
+int pinTrig = 11; // green
+// blue - vcc
 
 int pinLed=13;
+
+
+#define USE_SERIAL_MONITOR
+
+
+void motorDrive(boolean motorNumber, boolean motorDirection, int motorSpeed)
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Drive motor ");
+  Serial.print((int)motorNumber + 1);
+  Serial.print(' ');
+  if (motorDirection == turnCCW)
+    Serial.print("counter-");
+  Serial.print("clockwise with speed ");
+  Serial.println(motorSpeed);
+#endif
+
+  /*
+  This Drives a specified motor, in a specific direction, at a specified speed:
+    - motorNumber: motor1 or motor2 ---> Motor 1 or Motor 2
+    - motorDirection: turnCW or turnCCW ---> clockwise or counter-clockwise
+    - motorSpeed: 0 to 255 ---> 0 = stop / 255 = fast
+  */
+
+  boolean pinIn1;  //Relates to AIN1 or BIN1 (depending on the motor number specified)
+
+  //Specify the Direction to turn the motor
+  //Clockwise: AIN1/BIN1 = HIGH and AIN2/BIN2 = LOW
+  //Counter-Clockwise: AIN1/BIN1 = LOW and AIN2/BIN2 = HIGH
+  if (motorDirection == turnCW)
+    pinIn1 = HIGH;
+  else
+    pinIn1 = LOW;
+
+//Select the motor to turn, and set the direction and the speed
+  if(motorNumber == motor1)
+  {
+    digitalWrite(pinAIN1, pinIn1);
+    digitalWrite(pinAIN2, !pinIn1);  //This is the opposite of the AIN1
+    analogWrite(pinPWMA, motorSpeed);
+  }
+  else
+  {
+    digitalWrite(pinBIN1, pinIn1);
+    digitalWrite(pinBIN2, !pinIn1);  //This is the opposite of the BIN1
+    analogWrite(pinPWMB, motorSpeed);
+  }
+   
+ 
+//Finally , make sure STBY is disabled - pull it HIGH
+  digitalWrite(pinSTBY, HIGH);
+
+}
+
+void motorBrake(boolean motorNumber)
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Break motor ");
+  Serial.println((int)motorNumber + 1);
+#endif
+/*
+This "Short Brake"s the specified motor, by setting speed to zero
+*/
+
+  if (motorNumber == motor1)
+    analogWrite(pinPWMA, 0);
+  else
+    analogWrite(pinPWMB, 0);
+   
+}
+
+
+void motorStop(boolean motorNumber)
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Stop motor ");
+  Serial.println((int)motorNumber + 1);
+#endif
+  /*
+  This stops the specified motor by setting both IN pins to LOW
+  */
+  if (motorNumber == motor1) {
+    digitalWrite(pinAIN1, LOW);
+    digitalWrite(pinAIN2, LOW);
+  }
+  else
+  {
+    digitalWrite(pinBIN1, LOW);
+    digitalWrite(pinBIN2, LOW);
+  } 
+}
+
+
+void motorsStandby()
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.println("STANDBY");
+#endif
+  /*
+  This puts the motors into Standby Mode
+  */
+  digitalWrite(pinSTBY, LOW);
+}
+
+void Delay(int ms)
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Delay ");
+  Serial.print(ms);
+  Serial.println(" ms");
+#endif
+  delay(ms);  
+}
+
+
 
 int HIGH_LIMIT=255;
 int LOW_LIMIT=130;
 int STEP=15;
 
-
-void pwm_go(int A, int B)
-{
-  if (A>0)
-  {
-      digitalWrite(pinA1, HIGH);  
-      digitalWrite(pinA2, LOW);    
-  }
-  else if (A<0)
-  {
-      digitalWrite(pinA2, HIGH);  
-      digitalWrite(pinA1, LOW);    
-  }
-  else
-  {
-      digitalWrite(pinA1, LOW);  
-      digitalWrite(pinA2, LOW);    
-  }
-  
-  if (B>0)
-  {
-      digitalWrite(pinB2, HIGH);  
-      digitalWrite(pinB1, LOW);    
-  }
-  else if (B<0)
-  {
-      digitalWrite(pinB1, HIGH);  
-      digitalWrite(pinB2, LOW);    
-  }
-  else
-  {
-      digitalWrite(pinB1, LOW);  
-      digitalWrite(pinB2, LOW);    
-  }
-}
-
 SoftwareSerial BT(pinTx, pinRx);
 
 void setup()
 {
-  Serial.begin (9600);
+//Set the PIN Modes
+  pinMode(pinPWMA, OUTPUT);
+  pinMode(pinAIN1, OUTPUT);
+  pinMode(pinAIN2, OUTPUT);
+
+  pinMode(pinPWMB, OUTPUT);
+  pinMode(pinBIN1, OUTPUT);
+  pinMode(pinBIN2, OUTPUT);
+
+  pinMode(pinSTBY, OUTPUT);
+
+#ifdef USE_SERIAL_MONITOR
+  Serial.begin(9600);
+#endif
 
   //configure pin modes
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, LOW);
   
-  pinMode (pinA1, OUTPUT);
-  pinMode (pinA2, OUTPUT);
-  pinMode (pinB1, OUTPUT);
-  pinMode (pinB2, OUTPUT);
 
   pinMode(pinTrig, OUTPUT);
   pinMode(pinEcho, INPUT);
@@ -116,7 +225,7 @@ bool isTooClose()
   // of the ping to the reception of its echo off of an object.
   duration = pulseIn(pinEcho, HIGH, MAX_DURATION*10);
 
-  Serial.println(duration);
+ // Serial.println(duration);
 
   if (duration == 0)
     return false;
@@ -127,6 +236,120 @@ bool isTooClose()
 
 int speed = 0;
 
+bool obstacle = false;
+char  recent_state='s'; // Stopped
+
+void loop()
+{
+   bool isClose = isTooClose();
+   
+   if ( (!obstacle) && isClose )
+   {
+      digitalWrite(pinLed, HIGH);
+      BT.println("Obstacle! Emergency stop");
+      obstacle = true;
+
+      motorBrake(motor1);
+      motorBrake(motor2);
+      motorsStandby();
+   }
+
+
+   if ( (!isClose) && obstacle)
+   {
+      digitalWrite(pinLed, LOW);
+      BT.println("Obstacle removed");
+      obstacle = false;    
+   }
+   
+   int BluetoothData='s';
+   
+   if (BT.available())
+   {
+      BluetoothData=BT.read();
+      Serial.print("Received ");
+      Serial.println((char)BluetoothData);
+   }
+   
+    char report='\0';
+    
+    if (recent_state != BluetoothData)
+    {
+      motorStop(motor1);
+      motorStop(motor2);
+      motorsStandby();
+        report='S';
+        delay(100);
+    }
+
+    recent_state = BluetoothData;
+
+    int aftermath = 30;
+    
+    switch (BluetoothData)
+    {
+      case 'f':
+        if (obstacle)
+        {
+          BT.println("Cant go forward, obstacle");
+          motorBrake(motor1);
+          motorBrake(motor2);
+       motorsStandby();
+         recent_state='s';
+        }
+        else
+        {
+          motorDrive(motor1, turnCW, 255);
+          motorDrive(motor2, turnCW, 255);
+          recent_state='f';
+          report = 'F';
+          aftermath = 100;
+        }
+        break;
+
+      case 'b':
+          motorDrive(motor1, turnCCW, 255);
+          motorDrive(motor2, turnCCW, 255);
+        recent_state='b';
+        report = 'B';
+        aftermath = 100;
+        break;
+
+      case 'l':
+          motorDrive(motor1, turnCCW, 255);
+          motorDrive(motor2, turnCW, 255);
+        recent_state='l';
+        report = 'L';
+        aftermath = 100;
+        break;
+
+      case 'r':
+          motorDrive(motor1, turnCW, 255);
+          motorDrive(motor2, turnCCW, 255);
+        recent_state='r';
+        report = 'R';
+        aftermath = 100;
+        break;
+
+      case 's':
+        break;
+ 
+      default:
+        Serial.println("Unknown command");
+        report = 'X';
+        break;
+    }
+
+     if (report != '\0')
+     {
+      BT.print(report);
+     }
+     
+     delay(aftermath);// prepare for next data ...
+}
+
+
+/*
 void test()
 {
   Serial.println("Left FWD");
@@ -169,103 +392,5 @@ void test()
   delay(500);
   
 }
+*/
 
-bool obstacle = false;
-char  recent_state='s'; // Stopped
-
-void loop()
-{
-   bool isClose = isTooClose();
-   
-   if ( (!obstacle) && isClose )
-   {
-      digitalWrite(pinLed, HIGH);
-      BT.println("Obstacle! Emergency stop");
-      obstacle = true;
-   }
-
-
-   if ( (!isClose) && obstacle)
-   {
-      digitalWrite(pinLed, LOW);
-      BT.println("Obstacle removed");
-      obstacle = false;    
-   }
-   
-   int BluetoothData='s';
-   
-   if (BT.available())
-   {
-      BluetoothData=BT.read();
-      Serial.print("Received");
-      Serial.println(BluetoothData, HEX);
-   }
-   
-    char report='\0';
-    
-    if (recent_state != BluetoothData)
-    {
-        pwm_go(0,0);
-        report='S';
-        delay(100);
-    }
-
-    recent_state = BluetoothData;
-
-    int aftermath = 100;
-    
-    switch (BluetoothData)
-    {
-      case 'f':
-        if (obstacle)
-        {
-          BT.println("Cant go forward, obstacle");
-          pwm_go(0,0);
-          recent_state='s';
-        }
-        else
-        {
-          pwm_go(1,1);
-          recent_state='f';
-          report = 'F';
-          aftermath = 1000;
-        }
-        break;
-
-      case 'b':
-        pwm_go(-1,-1);
-        recent_state='b';
-        report = 'B';
-        aftermath = 1000;
-        break;
-
-      case 'l':
-        pwm_go(-1,1);
-        recent_state='l';
-        report = 'L';
-        aftermath = 1000;
-        break;
-
-      case 'r':
-        pwm_go(1,-1);
-        recent_state='r';
-        report = 'R';
-        aftermath = 1000;
-        break;
-
-      case 's':
-        break;
- 
-      default:
-        Serial.println("Unknown command");
-        report = 'X';
-        break;
-    }
-
-     if (report != '\0')
-     {
-      BT.println(report);
-     }
-     
-     delay(aftermath);// prepare for next data ...
-}
