@@ -200,8 +200,19 @@ public class BlueToothHelper
 			_device_name = device_name;
 			this._activity.getActionBar().setTitle("No Bluetooth Connection");
 		}
-		_connectedThread = new ConnectedThread(device);
-		_connectedThread.start();
+		if (null == _connectedThread)
+		{
+			_connectedThread = new ConnectedThread(device);
+			_connectedThread.start();
+		}
+		else
+		{
+			ConnectedThread tmp = _connectedThread;
+
+			tmp.Cancel();
+			_connectedThread = new ConnectedThread(device);
+			_connectedThread.start();
+		}
 		new android.os.Handler().postDelayed(
 				new Runnable()
 				{
@@ -318,6 +329,7 @@ public class BlueToothHelper
 					break;
 				}
 			}
+			Logger.Log.t("Thread END");
 		}
 
 		public boolean isConnected()
@@ -363,6 +375,21 @@ public class BlueToothHelper
 		/* Call this from the main activity to shutdown the connection */
 		public void Cancel()
 		{
+			interrupt();
+			try
+			{
+				mmInStream.close();
+			}
+			catch (IOException e1)
+			{
+			}
+			try
+			{
+				mmOutStream.close();
+			}
+			catch (IOException e1)
+			{
+			}
 			try
 			{
 				mmSocket.close();

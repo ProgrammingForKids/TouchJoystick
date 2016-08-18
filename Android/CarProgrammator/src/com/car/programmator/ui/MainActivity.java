@@ -8,6 +8,7 @@ import android.app.Dialog;
 import android.content.ClipData;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.view.DragEvent;
 import android.view.Gravity;
@@ -32,10 +33,13 @@ import android.widget.AdapterView.OnItemClickListener;
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 
+	private final int		SB_START		= 10;
+	private final int		SB_STOP			= 11;
 	ImageHelper				_performed		= new ImageHelper();
 	ImageHelper				_selected		= new ImageHelper();
 	ImageHelper				_insert			= new ImageHelper();
 	TextView				_prompt			= null;
+	ImageView				_startBnt		= null;
 	LinearLayout			_area_tools		= null;
 	LinearLayout			_current_area	= null;
 	private FlowLayout		_command_aria	= null;
@@ -51,6 +55,28 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
+		_startBnt = (ImageView) findViewById(R.id.image_tools);
+		_startBnt.setId(SB_START);
+		_startBnt.setOnClickListener(new OnClickListener()
+		{
+			@Override
+			public void onClick(View v)
+			{
+				int id = _startBnt.getId();
+				switch (id)
+				{
+					case SB_START:
+						StartPerform();
+						break;
+					case SB_STOP:
+						StopPerform();
+						break;
+					default:
+						break;
+				}
+			}
+		});
+
 		_command_aria = (FlowLayout) findViewById(R.id.test);
 		_command_aria.setOnDragListener(myOnDragListener);
 
@@ -230,20 +256,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		{
 			BTConnect();
 		}
-		else if (id == R.id.action_start)
-		{
-			_item = item;
-			StartPerform();
-		}
 		return super.onOptionsItemSelected(item);
 	}
 
 	private void StartPerform()
 	{
-		if (null != _item)
-		{
-			_item.setIcon(R.drawable.stop);
-		}
+		_startBnt.setId(SB_STOP);
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.stop));
+
 		_performed.RestoreImage(this);
 		_performed.index = 0;
 		_PerformMode = true;
@@ -253,10 +273,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private void StopPerform()
 	{
 		_PerformMode = false;
-		if (null != _item)
-		{
-			_item.setIcon(R.drawable.start);
-		}
+		_startBnt.setId(SB_START);
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.start));
 	}
 
 	void Perform()

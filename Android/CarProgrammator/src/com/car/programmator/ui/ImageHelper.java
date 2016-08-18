@@ -115,7 +115,7 @@ class ImageHelper
 		}
 		iv.setPadding(5, 5, 5, 5);
 		iv.setOnClickListener(listener);
-		ll.addView(iv);
+		ll.addView(iv,0);
 	}
 
 }// class Selected
