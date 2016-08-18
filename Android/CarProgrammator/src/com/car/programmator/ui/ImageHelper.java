@@ -1,15 +1,17 @@
 package com.car.programmator.ui;
 
-
 import com.car.programmator.util.Logger;
+import com.car.programmator.util.OpCode;
 
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
-import android.util.SparseIntArray;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+import android.widget.LinearLayout;
 
 class ImageHelper
 {
@@ -29,7 +31,7 @@ class ImageHelper
 		return this;
 	}
 
-	int GetId()
+	int Opcode()
 	{
 		if (null != view)
 		{
@@ -73,7 +75,7 @@ class ImageHelper
 		}
 	}
 
-	void RestoreImage(Context context, SparseIntArray rc)
+	void RestoreImage(Context context)
 	{
 		if (null == view)
 		{
@@ -81,11 +83,39 @@ class ImageHelper
 		}
 		if (null != context)
 		{
-			int drawableId = rc.get(view.getId());
+			int drawableId = OpCode.DrawableId(view.getId());
 			Drawable drawable = ContextCompat.getDrawable(context, drawableId);
 			((ImageView) view).setImageDrawable(drawable);
 		}
 	}
 
-}// class Selected
+	public static ImageView CreateImage(Context context, int opcode)
+	{
+		if (null == context)
+		{
+			return null;
+		}
+		int drawableId = OpCode.DrawableId(opcode);
+		ImageView iv = new ImageView(context);
+		Drawable drawable = ContextCompat.getDrawable(context, drawableId);
 
+		iv.setImageDrawable(drawable);
+		iv.setId(opcode);
+		iv.setAdjustViewBounds(true);
+		iv.setScaleType(ScaleType.CENTER_INSIDE);
+		return iv;
+	}
+
+	public static void Store(Context context, int id, LinearLayout ll, OnClickListener listener)
+	{
+		ImageView iv = CreateImage(context, id);
+		if (null == iv)
+		{
+			return;
+		}
+		iv.setPadding(5, 5, 5, 5);
+		iv.setOnClickListener(listener);
+		ll.addView(iv);
+	}
+
+}// class Selected

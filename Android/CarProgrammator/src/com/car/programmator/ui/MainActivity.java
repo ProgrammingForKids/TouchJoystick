@@ -7,13 +7,8 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.ClipData;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
-import android.util.SparseArray;
-import android.util.SparseIntArray;
 import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.Menu;
@@ -33,48 +28,19 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.ImageView.ScaleType;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 
-	private final int				_BACK			= 107;
-	private final int				_FORWARD		= _BACK + 1;
-	private final int				_LEFT			= _BACK + 2;
-	private final int				_RIGHT			= _BACK + 3;
-	private final int				_EMPTY			= _BACK + 4;
-
-	private SparseArray<Character>	opCodes			= new SparseArray<Character>()
-													{
-
-														{
-															put(_BACK, 'b');
-															put(_FORWARD, 'f');
-															put(_LEFT, 'l');
-															put(_RIGHT, 'r');
-														}
-													};
-
-	private SparseIntArray			_rc				= new SparseIntArray()
-													{
-
-														{
-															put(_FORWARD, R.drawable.f);
-															put(_BACK, R.drawable.b);
-															put(_LEFT, R.drawable.l);
-															put(_RIGHT, R.drawable.r);
-															put(_EMPTY, R.drawable.empty);
-														}
-													};
-
-	LinearLayout					_area_tools		= null;
-	LinearLayout					_current_area	= null;
-	TextView						_prompt			= null;
-	ImageHelper						_performed		= new ImageHelper();
-	ImageHelper						_selected		= new ImageHelper();
-	ImageHelper						_insert			= new ImageHelper();
-	private FlowLayout				_command_aria	= null;
-	private BlueToothHelper			_bth			= null;
+	ImageHelper				_performed		= new ImageHelper();
+	ImageHelper				_selected		= new ImageHelper();
+	ImageHelper				_insert			= new ImageHelper();
+	TextView				_prompt			= null;
+	LinearLayout			_area_tools		= null;
+	LinearLayout			_current_area	= null;
+	private FlowLayout		_command_aria	= null;
+	private BlueToothHelper	_bth			= null;
+	private boolean			_PerformMode	= false;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -83,7 +49,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		setContentView(R.layout.activity_main);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
-		//getActionBar().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#CECECE")));
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
 		_command_aria = (FlowLayout) findViewById(R.id.test);
 		_command_aria.setOnDragListener(myOnDragListener);
@@ -106,17 +71,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				}
 			});
 		}
-		Store(_FORWARD);
-		Store(_BACK);
-		Store(_LEFT);
-		Store(_RIGHT);
-	}
-
-	@Override
-	protected void onStart()
-	{
-		super.onStart();
-
+		ImageHelper.Store(this, OpCode._FORWARD, _area_tools, _OnClickListenerOpcodeToView);
+		ImageHelper.Store(this, OpCode._BACK, _area_tools, _OnClickListenerOpcodeToView);
+		ImageHelper.Store(this, OpCode._LEFT, _area_tools, _OnClickListenerOpcodeToView);
+		ImageHelper.Store(this, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
 	}
 
 	@Override
@@ -140,120 +98,116 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 	}
 
-	OnClickListener		_OnClickCommStep		= new OnClickListener()
-												{
-													@Override
-													public void onClick(View v)
-													{
-														Logger.Log.t("SELECT");
-														if (v.equals(_selected.view))
+	OnClickListener		_OnClickSelectInsert			= new OnClickListener()
 														{
-															_selected.UnSelect();
-															_command_aria.removeView(_insert.view);
-															_insert.Ini();
-															_selected.Ini();
-															return;
-														}
-														int count = _command_aria.getChildCount();
-														for (int k = 0; k < count; ++k)
-														{
-															View test = _command_aria.getChildAt(k);
-															if (test.equals(v))
+															@Override
+															public void onClick(View v)
 															{
-																_selected.Set(v, k).Select();
-																_insert.Set(CreateImage(_EMPTY), k);
-																_command_aria.addView(_insert.view, _insert.index);
-																break;
+																if (_PerformMode)
+																{
+																	return;
+																}
+																Logger.Log.t("SELECT");
+																if (v.equals(_selected.view))
+																{
+																	_selected.UnSelect();
+																	_command_aria.removeView(_insert.view);
+																	_insert.Ini();
+																	_selected.Ini();
+																	return;
+																}
+																int count = _command_aria.getChildCount();
+																for (int k = 0; k < count; ++k)
+																{
+																	View test = _command_aria.getChildAt(k);
+																	if (test.equals(v))
+																	{
+																		_selected.Set(v, k).Select();
+																		_insert.Set(ImageHelper.CreateImage(MainActivity.this, OpCode._EMPTY), k);
+																		_command_aria.addView(_insert.view, _insert.index);
+																		break;
+																	}
+																}
 															}
-														}
-													}
-												};
-	OnClickListener		_OnClickListener		= new OnClickListener()
-												{
+														};
 
-													@Override
-													public void onClick(View v)
-													{
-														Logger.Log.t("longTouch", "ID", v.getId());
-														ImageView iv = CreateImage(v.getId());
-														iv.setOnClickListener(_OnClickCommStep);
-														iv.setOnLongClickListener(myOnLongClickListener);
-														if (-1 < _insert.index)
+	OnClickListener		_OnClickListenerOpcodeToView	= new OnClickListener()
 														{
-															_command_aria.addView(iv, _insert.index);
-															_command_aria.removeView(_insert.view);
-															_selected.UnSelect();
-															_insert.Ini();
-															_selected.Ini();
-														}
-														else
+
+															@Override
+															public void onClick(View v)
+															{
+																if (_PerformMode)
+																{
+																	return;
+																}
+																Logger.Log.t("longTouch", "ID", v.getId());
+																ImageView iv = ImageHelper.CreateImage(MainActivity.this, v.getId());
+																iv.setOnClickListener(_OnClickSelectInsert);
+																iv.setOnLongClickListener(myOnLongClickListener);
+																if (-1 < _insert.index)
+																{
+																	_command_aria.addView(iv, _insert.index);
+																	_command_aria.removeView(_insert.view);
+																	_selected.UnSelect();
+																	_insert.Ini();
+																	_selected.Ini();
+																}
+																else
+																{
+																	_command_aria.addView(iv);
+																}
+															}
+														};
+
+	OnLongClickListener	myOnLongClickListener			= new OnLongClickListener()
 														{
-															_command_aria.addView(iv);
-														}
-													}
-												};
 
-	OnLongClickListener	myOnLongClickListener	= new OnLongClickListener()
-												{
+															@Override
+															public boolean onLongClick(View v)
+															{
+																if (_PerformMode)
+																{
+																	return true;
+																}
+																ClipData data = ClipData.newPlainText("", "");
+																DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
+																v.startDrag(data, shadowBuilder, v, 0);
+																return true;
+															}
 
-													@Override
-													public boolean onLongClick(View v)
-													{
-														ClipData data = ClipData.newPlainText("", "");
-														DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-														v.startDrag(data, shadowBuilder, v, 0);
-														return true;
-													}
+														};
 
-												};
-
-	OnDragListener		myOnDragListener		= new OnDragListener()
-												{
-
-													@Override
-													public boolean onDrag(View v, DragEvent event)
-													{
-														switch (event.getAction())
+	OnDragListener		myOnDragListener				= new OnDragListener()
 														{
-															case DragEvent.ACTION_DRAG_STARTED:
-																break;
-															case DragEvent.ACTION_DRAG_ENTERED:
-																break;
-															case DragEvent.ACTION_DRAG_EXITED:
-																break;
-															case DragEvent.ACTION_DROP:
-																break;
-															case DragEvent.ACTION_DRAG_ENDED:
-																View view = (View) event.getLocalState();
-																_command_aria.removeView(view);
-															default:
-																break;
-														}
-														return true;
-													}
 
-												};
+															@Override
+															public boolean onDrag(View v, DragEvent event)
+															{
+																switch (event.getAction())
+																{
+																	case DragEvent.ACTION_DRAG_STARTED:
+																		break;
+																	case DragEvent.ACTION_DRAG_ENTERED:
+																		break;
+																	case DragEvent.ACTION_DRAG_EXITED:
+																		break;
+																	case DragEvent.ACTION_DROP:
+																		break;
+																	case DragEvent.ACTION_DRAG_ENDED:
+																		if (!_PerformMode)
+																		{
+																			View view = (View) event.getLocalState();
+																			_command_aria.removeView(view);
+																		}
+																		break;
+																	default:
+																		break;
+																}
+																return true;
+															}
 
-	void Store(int id)
-	{
-		ImageView iv = CreateImage(id);
-		iv.setPadding(5, 5, 5, 5);
-		iv.setOnClickListener(_OnClickListener);
-		_area_tools.addView(iv);
-	}
-
-	ImageView CreateImage(int id)
-	{
-		int drawableId = _rc.get(id);
-		ImageView iv = new ImageView(this);
-		Drawable drawable = ContextCompat.getDrawable(this, drawableId);
-
-		iv.setImageDrawable(drawable);
-		iv.setId(id);
-		iv.setAdjustViewBounds(true);
-		iv.setScaleType(ScaleType.CENTER_INSIDE);
-		return iv;
-	}
+														};
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
@@ -261,7 +215,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		MenuItem item = menu.getItem(1);
-		//item.setTitle("Start");
+		// item.setTitle("Start");
 		item.setIcon(R.drawable.start);
 		return true;
 	}
@@ -286,23 +240,38 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private void StartPerform()
 	{
-		_performed.RestoreImage(this, _rc);
+		_performed.RestoreImage(this);
 		_performed.index = 0;
+		_PerformMode = true;
 		Perform();
+	}
+
+	private void StopPerform()
+	{
+		_PerformMode = false;
 	}
 
 	void Perform()
 	{
+		if (!_PerformMode)
+		{
+			return;
+		}
 		if (null != _insert.view)
 		{
+			StopPerform();
 			return;
 		}
 		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 		{
 			_performed.view = _command_aria.getChildAt(_performed.index);
 			_performed.Select();
-			_bth.Send(opCodes.get(_performed.view.getId()));
+			_bth.Send(OpCode.OpcodeC(_performed.Opcode()));
 			_performed.index += 1;
+		}
+		else
+		{
+			StopPerform();
 		}
 	}
 
@@ -311,7 +280,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		Logger.Log.t(c);
 		Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
-		char pc = opCodes.get(_performed.GetId());
+		char pc = OpCode.OpcodeC(_performed.Opcode());
 		if ((pc - c) == ('a' - 'A'))
 		{
 			_performed.UnSelect();
@@ -321,10 +290,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				|| STOP_PERFORMANCE == c
 				|| CONNECT_ERROR == c)
 		{
+			StopPerform();
 			_performed.UnSelect();
 		}
 		else
 		{
+			StopPerform();
 			_performed.UnSelect();
 			_performed.SetImage(this, R.drawable.x);
 		}
