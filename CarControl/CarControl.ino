@@ -28,13 +28,13 @@ void Delay(int ms)
 }
 
 
-/* 
- 
- Bluetooth
+/*
+
+  Bluetooth
   - Pin 12 ---> TX // purple
   - Pin 2  ---> RX // orange
-// ground - blk
-// vcc - white, gray - ground
+  // ground - blk
+  // vcc - white, gray - ground
 */
 SoftwareSerial BT(12, 2);
 
@@ -48,8 +48,8 @@ SoftwareSerial BT(12, 2);
   - Pin 7 ---> BIN1
   - Pin 8 ---> BIN2
   - Pin 9 ---> PWMB
-  */
-TB6612FNG wheels(3,4,5,6,7,8,9);
+*/
+TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
 
 void setup()

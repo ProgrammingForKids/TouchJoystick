@@ -5,17 +5,17 @@
 
 class TB6612FNG : public Wheels
 {
-  class TBMotor;
+    class TBMotor;
 
-  int pinSTDBY;
-  
-public:
-  TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB);
-  void begin();
+    int pinSTDBY;
 
-protected:
-  void doStandby();
-  void doEnable();
+  public:
+    TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB);
+    void begin();
+
+  protected:
+    void doStandby();
+    void doEnable();
 };
 
 #endif // !defined __ProgrammableCar__CarControl__TB6612FNG_H__
