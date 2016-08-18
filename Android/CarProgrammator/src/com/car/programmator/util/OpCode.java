@@ -39,11 +39,25 @@ public class OpCode
 
 	public static int DrawableId(final int opcode)
 	{
-		return _rc.get(opcode);
+		try
+		{
+			return _rc.get(opcode);
+		}
+		catch (Exception e)
+		{
+		}
+		return 0;
 	}
 
 	public static char OpcodeC(final int opcode)
 	{
-		return opCodes.get(opcode);
+		try
+		{
+			return opCodes.get(opcode);
+		}
+		catch (Exception e)
+		{
+		}
+		return 0;
 	}
 }// class OpCode

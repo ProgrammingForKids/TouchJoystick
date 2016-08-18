@@ -275,11 +275,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 	}
 
-	@Override
-	public void BTRespose(char c)
+	private void ResposeToUiThread(char c)
 	{
-		Logger.Log.t(c);
 		Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
+		if (null == _performed)
+		{
+			return;
+		}
 		char pc = OpCode.OpcodeC(_performed.Opcode());
 		if ((pc - c) == ('a' - 'A'))
 		{
@@ -300,6 +302,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			_performed.SetImage(this, R.drawable.x);
 		}
 
+	}
+
+	@Override
+	public void BTRespose(final char c)
+	{
+		Logger.Log.t(c);
+		this.runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+				ResposeToUiThread(c);
+			}
+		});
 	}
 
 	void ShowDevices(final ArrayList<String> list)
