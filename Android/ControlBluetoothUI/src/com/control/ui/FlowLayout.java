@@ -1,5 +1,6 @@
 package com.control.ui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.util.AttributeSet;
@@ -29,9 +30,10 @@ public class FlowLayout extends ViewGroup
 		TypedArray a = ctx.obtainStyledAttributes(attrs, R.styleable.FlowLayout);
 		String H = a.getString(R.styleable.FlowLayout_paddingH);
 		String V = a.getString(R.styleable.FlowLayout_paddingV);
-		// LOG.d("H = " + H + "V=" + V);
 		if (H == null || V == null)
+		{
 			setPaddings(V == null ? 0 : Integer.parseInt(V), H == null ? 0 : Integer.parseInt(H));
+		}
 		else
 		{
 			setPaddings(Integer.parseInt(V), Integer.parseInt(H));
@@ -52,6 +54,7 @@ public class FlowLayout extends ViewGroup
 		setPaddings(context, attrs);
 	}
 
+	@SuppressLint("Assert")
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
 	{
@@ -63,9 +66,14 @@ public class FlowLayout extends ViewGroup
 		int ypos = getPaddingTop();
 		int childHeightMeasureSpec;
 		if (MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.AT_MOST)
+		{
 			childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.AT_MOST);
+
+		}
 		else
+		{
 			childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
+		}
 		mHeight = 0;
 		for (int i = 0; i < count; i++)
 		{
@@ -122,4 +130,4 @@ public class FlowLayout extends ViewGroup
 		}
 	}
 
-}//class FlowLayout
+}// class FlowLayout
