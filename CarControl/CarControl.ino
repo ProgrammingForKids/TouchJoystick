@@ -1,16 +1,19 @@
 const unsigned long MAX_DISTANCE = 35;
-const unsigned long MAX_DURATION = MAX_DISTANCE * 1000 * 1000 * 2 / 100 / 340;
 
 #include <SoftwareSerial.h>// import the serial library
 
 #include "TB6612FNG.h"
 
 
+#include "Outlook.h"
 
-//Ultrasonic sensor
-int pinEcho = 10; // yellow
-int pinTrig = 11; // green
+/*
+ * Ultrasonic sensor
+  - Pin 10 ---> echo // yellow
+  - Pin 11 ---> trig // green
 // blue - vcc
+*/
+Outlook outlook(10, 11, MAX_DISTANCE);
 
 int pinLed = 13;
 
@@ -65,9 +68,7 @@ void setup()
   digitalWrite(pinLed, LOW);
 
 
-  pinMode(pinTrig, OUTPUT);
-  pinMode(pinEcho, INPUT);
-
+  outlook.begin();
   BT.begin(38400);
   BT.println("Bluetooth is Ready");
 
@@ -77,40 +78,12 @@ void setup()
 
 
 
-bool isTooClose()
-{
-  long duration;
-
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(pinTrig, LOW);
-  delayMicroseconds(5);
-  digitalWrite(pinTrig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(pinTrig, LOW);
-
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  duration = pulseIn(pinEcho, HIGH, MAX_DURATION * 10);
-
-  // Serial.println(duration);
-
-  if (duration == 0)
-    return false;
-  if (duration > MAX_DURATION )
-    return false;
-  return true;
-}
-
-int speed = 0;
-
 bool obstacle = false;
 char  recent_state = 's'; // Stopped
 
 void loop()
 {
-  bool isClose = isTooClose();
+  bool isClose = outlook.isInRange();
 
   if ( (!obstacle) && isClose )
   {
