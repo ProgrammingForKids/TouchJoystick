@@ -54,6 +54,7 @@ SoftwareSerial BT(12, 2);
 */
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
+unsigned long ready_to_read_time;
 
 void setup()
 {
@@ -73,13 +74,14 @@ void setup()
   BT.println("Bluetooth is Ready");
 
   Serial.println("Ready");
-
+  ready_to_read_time = millis();
 }
 
 
 
 bool obstacle = false;
 char  recent_state = 's'; // Stopped
+
 
 void loop()
 {
