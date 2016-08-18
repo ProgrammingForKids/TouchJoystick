@@ -3,6 +3,224 @@ const unsigned long MAX_DURATION = MAX_DISTANCE*1000*1000*2/100/340;
 
 #include <SoftwareSerial.h>// import the serial library
 
+
+class Wheels
+{
+protected:
+  class Motor
+  {
+  protected:
+    Motor() {}
+  public:
+    virtual void GoClockwise() = 0;
+    virtual void GoCounterclockwise() = 0;
+    virtual void Stop() = 0;
+    virtual void Brake() = 0;
+  };
+  
+  Motor* mA;
+  Motor* mB;
+
+protected:
+  Wheels()
+  {
+    mA = NULL;
+    mB = NULL;
+  }
+
+  virtual void doStandby() = 0;
+  virtual void doEnable() = 0;
+
+public:
+  void Left()
+  {
+    Serial.println("Wheels::Left");
+    doEnable();
+    mA->GoCounterclockwise();
+    mB->GoClockwise();
+  }
+
+  void Right()
+  {
+    Serial.println("Wheels::Right");
+    doEnable();
+    mA->GoClockwise();
+    mB->GoCounterclockwise();
+  }
+  
+  void Forward()
+  {
+    Serial.println("Wheels::Forward");
+    doEnable();
+    mA->GoClockwise();
+    mB->GoClockwise();    
+  }
+  
+  void Back()
+  {
+    Serial.println("Wheels::Back");
+    doEnable();
+    mA->GoCounterclockwise();
+    mB->GoCounterclockwise();
+  }
+  
+  void Stop()
+  {
+    Serial.println("Wheels::Stop");
+    mA->Stop();
+    mB->Stop();
+    doStandby();
+  }
+  
+  void Brake()
+  {
+    Serial.println("Wheels::Brake");    
+    mA->Stop();
+    mB->Stop();
+    doStandby();
+  }
+};
+
+class TB6612FNG : public Wheels
+{
+  class TBMotor : public Wheels::Motor
+  {
+    const int pin1;
+    const int pin2;
+    const int pinPWM;
+    const String name;
+    
+    int speed;
+    int val1;
+    int val2;
+
+    int NextSpeed()
+    {
+      static const int Step = 32;
+      static const int initSpeed = 128;
+      
+      if (speed == 255)
+      {
+        return 255;
+      }
+
+      if (speed < initSpeed)
+      {
+        return initSpeed;
+      }
+
+      if (speed + Step > 255)
+        return 255;
+
+      return speed + Step;
+    }
+
+    void Rotate(int p1, int p2)
+    {
+      if (p1 != val1 || p2 != val2)
+      {
+        if (speed != 0)
+        {
+          Stop();
+          delay(10);
+        }
+      }
+
+      speed = NextSpeed();
+      val1 = p1;
+      val2 = p2;
+      analogWrite(pinPWM, speed);
+      digitalWrite(pin1, p1);
+      digitalWrite(pin2, p2);
+    }
+
+    void Report(String op)
+    {
+      Serial.print("Engine ");
+      Serial.print(name);
+      Serial.print(" going ");
+      Serial.print(op);
+      Serial.print(" -- ");
+      Serial.print(val1);
+      Serial.print(':');
+      Serial.print(val2);
+      Serial.print(" with speed ");
+      Serial.println(speed);      
+    }
+    
+  public:
+    TBMotor(String n, int p1, int p2, int pPWM)
+    : pin1(p1)
+    , pin2(p2)
+    , pinPWM(pPWM)
+    , name(n)
+    {
+      pinMode(pin1, OUTPUT);
+      pinMode(pin2, OUTPUT);
+      pinMode(pinPWM, OUTPUT);
+      speed=0;
+      val1 = LOW;
+      val2 = LOW;
+    }
+
+    void GoClockwise()
+    {
+      Rotate(HIGH, LOW);
+      Report("Clockwise");
+    }
+    void GoCounterclockwise()
+    {
+      Rotate(LOW, HIGH);
+      Report("Counterclockwise");
+    }
+    void Stop()
+    {
+      digitalWrite(pin1, LOW);
+      digitalWrite(pin2, LOW);
+      speed = 0;
+      val1 = LOW;
+      val2 = LOW;
+      Report("Stop");
+    }
+    void Brake()
+    {
+      analogWrite(pinPWM, 0);      
+      speed = 0;
+      val1 = LOW;
+      val2 = LOW;
+      Report("Brake");
+    }
+  };
+
+  int pinSTDBY;
+  
+public:
+  TB6612FNG()
+  {
+  }
+
+  void begin(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB)
+  {
+    mA = new TBMotor("A", pINA1, pINA2, pPWMA);
+    mB = new TBMotor("B", pINB1, pINB2, pPWMB);
+    pinSTDBY = pSTDBY;
+    pinMode(pinSTDBY, OUTPUT);
+    digitalWrite(pinSTDBY, LOW);
+  }
+
+protected:
+  void doStandby()
+  {
+    digitalWrite(pinSTDBY, LOW);
+    Serial.println("doStandby");
+  }
+  void doEnable()
+  {
+    digitalWrite(pinSTDBY, HIGH);    
+    Serial.println("doEnable");
+  }
+};
+
 /*
 Connections:
 Motor driver
@@ -56,106 +274,6 @@ int pinLed=13;
 
 #define USE_SERIAL_MONITOR
 
-
-void motorDrive(boolean motorNumber, boolean motorDirection, int motorSpeed)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Drive motor ");
-  Serial.print((int)motorNumber + 1);
-  Serial.print(' ');
-  if (motorDirection == turnCCW)
-    Serial.print("counter-");
-  Serial.print("clockwise with speed ");
-  Serial.println(motorSpeed);
-#endif
-
-  /*
-  This Drives a specified motor, in a specific direction, at a specified speed:
-    - motorNumber: motor1 or motor2 ---> Motor 1 or Motor 2
-    - motorDirection: turnCW or turnCCW ---> clockwise or counter-clockwise
-    - motorSpeed: 0 to 255 ---> 0 = stop / 255 = fast
-  */
-
-  boolean pinIn1;  //Relates to AIN1 or BIN1 (depending on the motor number specified)
-
-  //Specify the Direction to turn the motor
-  //Clockwise: AIN1/BIN1 = HIGH and AIN2/BIN2 = LOW
-  //Counter-Clockwise: AIN1/BIN1 = LOW and AIN2/BIN2 = HIGH
-  if (motorDirection == turnCW)
-    pinIn1 = HIGH;
-  else
-    pinIn1 = LOW;
-
-//Select the motor to turn, and set the direction and the speed
-  if(motorNumber == motor1)
-  {
-    digitalWrite(pinAIN1, pinIn1);
-    digitalWrite(pinAIN2, !pinIn1);  //This is the opposite of the AIN1
-    analogWrite(pinPWMA, motorSpeed);
-  }
-  else
-  {
-    digitalWrite(pinBIN1, pinIn1);
-    digitalWrite(pinBIN2, !pinIn1);  //This is the opposite of the BIN1
-    analogWrite(pinPWMB, motorSpeed);
-  }
-   
- 
-//Finally , make sure STBY is disabled - pull it HIGH
-  digitalWrite(pinSTBY, HIGH);
-
-}
-
-void motorBrake(boolean motorNumber)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Break motor ");
-  Serial.println((int)motorNumber + 1);
-#endif
-/*
-This "Short Brake"s the specified motor, by setting speed to zero
-*/
-
-  if (motorNumber == motor1)
-    analogWrite(pinPWMA, 0);
-  else
-    analogWrite(pinPWMB, 0);
-   
-}
-
-
-void motorStop(boolean motorNumber)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Stop motor ");
-  Serial.println((int)motorNumber + 1);
-#endif
-  /*
-  This stops the specified motor by setting both IN pins to LOW
-  */
-  if (motorNumber == motor1) {
-    digitalWrite(pinAIN1, LOW);
-    digitalWrite(pinAIN2, LOW);
-  }
-  else
-  {
-    digitalWrite(pinBIN1, LOW);
-    digitalWrite(pinBIN2, LOW);
-  } 
-}
-
-
-void motorsStandby()
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.println("STANDBY");
-#endif
-  /*
-  This puts the motors into Standby Mode
-  */
-  digitalWrite(pinSTBY, LOW);
-}
-
 void Delay(int ms)
 {
 #ifdef USE_SERIAL_MONITOR
@@ -174,9 +292,14 @@ int STEP=15;
 
 SoftwareSerial BT(pinTx, pinRx);
 
+TB6612FNG wheels;
+
+
 void setup()
 {
 //Set the PIN Modes
+/*  
+
   pinMode(pinPWMA, OUTPUT);
   pinMode(pinAIN1, OUTPUT);
   pinMode(pinAIN2, OUTPUT);
@@ -186,7 +309,9 @@ void setup()
   pinMode(pinBIN2, OUTPUT);
 
   pinMode(pinSTBY, OUTPUT);
-
+*/
+  wheels.begin(pinPWMA, pinAIN2, pinAIN1, pinSTBY, pinBIN1, pinBIN2, pinPWMB);
+  
 #ifdef USE_SERIAL_MONITOR
   Serial.begin(9600);
 #endif
@@ -249,9 +374,7 @@ void loop()
       BT.println("Obstacle! Emergency stop");
       obstacle = true;
 
-      motorBrake(motor1);
-      motorBrake(motor2);
-      motorsStandby();
+      wheels.Brake();
    }
 
 
@@ -275,9 +398,7 @@ void loop()
     
     if (recent_state != BluetoothData)
     {
-      motorStop(motor1);
-      motorStop(motor2);
-      motorsStandby();
+      wheels.Stop();
         report='S';
         delay(100);
     }
@@ -292,15 +413,12 @@ void loop()
         if (obstacle)
         {
           BT.println("Cant go forward, obstacle");
-          motorBrake(motor1);
-          motorBrake(motor2);
-       motorsStandby();
+          wheels.Brake();
          recent_state='s';
         }
         else
         {
-          motorDrive(motor1, turnCW, 255);
-          motorDrive(motor2, turnCW, 255);
+          wheels.Forward();
           recent_state='f';
           report = 'F';
           aftermath = 100;
@@ -308,24 +426,21 @@ void loop()
         break;
 
       case 'b':
-          motorDrive(motor1, turnCCW, 255);
-          motorDrive(motor2, turnCCW, 255);
+        wheels.Back();
         recent_state='b';
         report = 'B';
         aftermath = 100;
         break;
 
       case 'l':
-          motorDrive(motor1, turnCCW, 255);
-          motorDrive(motor2, turnCW, 255);
+        wheels.Left();
         recent_state='l';
         report = 'L';
         aftermath = 100;
         break;
 
       case 'r':
-          motorDrive(motor1, turnCW, 255);
-          motorDrive(motor2, turnCCW, 255);
+        wheels.Right();
         recent_state='r';
         report = 'R';
         aftermath = 100;
@@ -347,50 +462,4 @@ void loop()
      
      delay(aftermath);// prepare for next data ...
 }
-
-
-/*
-void test()
-{
-  Serial.println("Left FWD");
-  pwm_go(1,0);
-  delay(2000);
-  Serial.println("Left STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Left REV");
-  pwm_go(-1,0);
-  delay(2000);
-  Serial.println("Left STOP");
-  pwm_go(0,0);
-  delay(500);
-  
-  Serial.println("Right FWD");
-  pwm_go(0,1);
-  delay(2000);
-  Serial.println("Right STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Right REV");
-  pwm_go(0, -1);
-  delay(2000);
-  Serial.println("Right STOP");
-  pwm_go(0,0);
-  delay(500);
-
-  Serial.println("Both FWD");
-  pwm_go(1,1);
-  delay(2000);
-  Serial.println("Both STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Both REV");
-  pwm_go(-1,-1);
-  delay(2000);
-  Serial.println("Both STOP");
-  pwm_go(0,0);
-  delay(500);
-  
-}
-*/
 
