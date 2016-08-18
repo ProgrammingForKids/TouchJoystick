@@ -72,14 +72,17 @@ public:
 	, pinPWM(pPWM)
 	, name(n)
 	{
-		pinMode(pin1, OUTPUT);
-		pinMode(pin2, OUTPUT);
-		pinMode(pinPWM, OUTPUT);
 		speed=0;
 		val1 = LOW;
 		val2 = LOW;
 	}
 
+  void begin()
+  {
+    pinMode(pin1, OUTPUT);
+    pinMode(pin2, OUTPUT);
+    pinMode(pinPWM, OUTPUT);    
+  }
 	void GoClockwise()
 	{
 		Rotate(HIGH, LOW);
@@ -109,16 +112,18 @@ public:
 	}
 };
 
-TB6612FNG::TB6612FNG()
-{
-}
-
-void TB6612FNG::begin(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB)
+TB6612FNG::TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB)
 {
 	mA = new TBMotor("A", pINA1, pINA2, pPWMA);
 	mB = new TBMotor("B", pINB1, pINB2, pPWMB);
 	pinSTDBY = pSTDBY;
-	pinMode(pinSTDBY, OUTPUT);
+}
+
+void TB6612FNG::begin()
+{
+  mA->begin();
+  mB->begin();
+  pinMode(pinSTDBY, OUTPUT);
 	digitalWrite(pinSTDBY, LOW);
 }
 

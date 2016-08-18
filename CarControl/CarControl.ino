@@ -5,48 +5,7 @@ const unsigned long MAX_DURATION = MAX_DISTANCE * 1000 * 1000 * 2 / 100 / 340;
 
 #include "TB6612FNG.h"
 
-/*
-  Connections:
-  Motor driver
-  - Pin 3 ---> PWMA
-  - Pin 4 ---> AIN2
-  - Pin 5 ---> AIN1
-  - Pin 6 ---> STBY
-  - Pin 7 ---> BIN1
-  - Pin 8 ---> BIN2
-  - Pin 9 ---> PWMB
 
-  - Motor 1: A01 and A02
-  - Motor 2: B01 and B02
-
-*/
-
-//Define the Pins
-
-//Motor 1
-int pinPWMA = 3; //Speed
-int pinAIN2 = 4; //Direction
-int pinAIN1 = 5; //Direction
-
-//Standby
-int pinSTBY = 6;
-
-//Motor 2
-int pinBIN1 = 7; //Direction
-int pinBIN2 = 8; //Direction
-int pinPWMB = 9; //Speed
-
-//Constants to help remember the parameters
-static boolean turnCW = 0;  //for motorDrive function
-static boolean turnCCW = 1; //for motorDrive function
-static boolean motor1 = 0;  //for motorDrive, motorStop, motorBrake functions
-static boolean motor2 = 1;  //for motorDrive, motorStop, motorBrake functions
-
-// Bluetooth
-int pinTx = 12; // purple
-int pinRx = 2; // orange
-// ground - blk
-// vcc - white, gray - ground
 
 //Ultrasonic sensor
 int pinEcho = 10; // yellow
@@ -69,32 +28,33 @@ void Delay(int ms)
 }
 
 
+/* 
+ 
+ Bluetooth
+  - Pin 12 ---> TX // purple
+  - Pin 2  ---> RX // orange
+// ground - blk
+// vcc - white, gray - ground
+*/
+SoftwareSerial BT(12, 2);
 
-int HIGH_LIMIT = 255;
-int LOW_LIMIT = 130;
-int STEP = 15;
-
-SoftwareSerial BT(pinTx, pinRx);
-
-TB6612FNG wheels;
+/*
+  Connections:
+  Motor driver
+  - Pin 3 ---> PWMA
+  - Pin 4 ---> AIN2
+  - Pin 5 ---> AIN1
+  - Pin 6 ---> STBY
+  - Pin 7 ---> BIN1
+  - Pin 8 ---> BIN2
+  - Pin 9 ---> PWMB
+  */
+TB6612FNG wheels(3,4,5,6,7,8,9);
 
 
 void setup()
 {
-  //Set the PIN Modes
-  /*
-
-    pinMode(pinPWMA, OUTPUT);
-    pinMode(pinAIN1, OUTPUT);
-    pinMode(pinAIN2, OUTPUT);
-
-    pinMode(pinPWMB, OUTPUT);
-    pinMode(pinBIN1, OUTPUT);
-    pinMode(pinBIN2, OUTPUT);
-
-    pinMode(pinSTBY, OUTPUT);
-  */
-  wheels.begin(pinPWMA, pinAIN2, pinAIN1, pinSTBY, pinBIN1, pinBIN2, pinPWMB);
+  wheels.begin();
 
 #ifdef USE_SERIAL_MONITOR
   Serial.begin(9600);

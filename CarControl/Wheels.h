@@ -23,6 +23,7 @@ public:
 	void Back();
 	void Stop();
 	void Brake();
+  virtual void begin() = 0;
 };
 
 class Wheels::Motor
@@ -34,6 +35,7 @@ public:
 	virtual void GoCounterclockwise() = 0;
 	virtual void Stop() = 0;
 	virtual void Brake() = 0;
+  virtual void begin() = 0;
 };
 
 #endif // !defined __ProgrammableCar__CarControl__WHEELS__H__

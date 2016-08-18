@@ -10,8 +10,8 @@ class TB6612FNG : public Wheels
   int pinSTDBY;
   
 public:
-  TB6612FNG();
-  void begin(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB);
+  TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB);
+  void begin();
 
 protected:
   void doStandby();
