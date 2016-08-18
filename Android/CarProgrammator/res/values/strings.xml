@@ -3,7 +3,7 @@
 
     <string name="app_name">CarProgrammator</string>
     <string name="action_settings">Settings</string>
-    <string name="action_start">Start</string>
+    <string name="action_start">\u25b6 \u25a0 Start</string>
     
     <integer name="_padding_v">60</integer>
     <integer name="_padding_h">16</integer>

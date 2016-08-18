@@ -41,6 +41,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private FlowLayout		_command_aria	= null;
 	private BlueToothHelper	_bth			= null;
 	private boolean			_PerformMode	= false;
+	private MenuItem		_item			= null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -75,6 +76,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		ImageHelper.Store(this, OpCode._BACK, _area_tools, _OnClickListenerOpcodeToView);
 		ImageHelper.Store(this, OpCode._LEFT, _area_tools, _OnClickListenerOpcodeToView);
 		ImageHelper.Store(this, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
+
 	}
 
 	@Override
@@ -214,9 +216,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		MenuItem item = menu.getItem(1);
-		// item.setTitle("Start");
-		item.setIcon(R.drawable.start);
 		return true;
 	}
 
@@ -233,6 +232,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 		else if (id == R.id.action_start)
 		{
+			_item = item;
 			StartPerform();
 		}
 		return super.onOptionsItemSelected(item);
@@ -240,6 +240,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private void StartPerform()
 	{
+		if (null != _item)
+		{
+			_item.setIcon(R.drawable.stop);
+		}
 		_performed.RestoreImage(this);
 		_performed.index = 0;
 		_PerformMode = true;
@@ -249,6 +253,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private void StopPerform()
 	{
 		_PerformMode = false;
+		if (null != _item)
+		{
+			_item.setIcon(R.drawable.start);
+		}
 	}
 
 	void Perform()
