@@ -1,271 +1,184 @@
-const unsigned long MAX_DISTANCE = 15;
-const unsigned long MAX_DURATION = MAX_DISTANCE*1000*1000*2/100/340;
+const unsigned long MAX_DISTANCE = 35;
 
 #include <SoftwareSerial.h>// import the serial library
 
-
-//Pins 5 and 6: controlled by timer0 (8 bits)
-//Pins 9 and 10: controlled by timer1 (16 bits)
-//Pins 11 and 3: controlled by timer2 (8 bits)
-
-//Define Pins
-
-//Motor A
-int pinA1 = 2;    //Yellow
-int pinA2 = 3;    // Green
-
-//Motor B
-int pinB1 = 4;    // Blue
-int pinB2 = 5;    // Purple->Orange
+#include "TB6612FNG.h"
 
 
-// Bluetooth
-int pinTx = 7; // Yellow
-int pinRx = 8; // Green
-// int pinEn=9; // Brown
+#include "Outlook.h"
 
-//Ultrasonic sensor
-int pinEcho = 11; // White
-int pinTrig = 12; // Blue
+/*
+ * Ultrasonic sensor
+  - Pin 10 ---> echo // yellow
+  - Pin 11 ---> trig // green
+// blue - vcc
+*/
+Outlook outlook(10, 11, MAX_DISTANCE);
 
-
-
-int pinLed=13;
-
-int HIGH_LIMIT=255;
-int LOW_LIMIT=130;
-int STEP=15;
+int pinLed = 13;
 
 
-void pwm_go(int A, int B)
+#define USE_SERIAL_MONITOR
+
+void Delay(int ms)
 {
-  if (A>0)
-  {
-      digitalWrite(pinA1, HIGH);  
-      digitalWrite(pinA2, LOW);    
-  }
-  else if (A<0)
-  {
-      digitalWrite(pinA2, HIGH);  
-      digitalWrite(pinA1, LOW);    
-  }
-  else
-  {
-      digitalWrite(pinA1, LOW);  
-      digitalWrite(pinA2, LOW);    
-  }
-  
-  if (B>0)
-  {
-      digitalWrite(pinB2, HIGH);  
-      digitalWrite(pinB1, LOW);    
-  }
-  else if (B<0)
-  {
-      digitalWrite(pinB1, HIGH);  
-      digitalWrite(pinB2, LOW);    
-  }
-  else
-  {
-      digitalWrite(pinB1, LOW);  
-      digitalWrite(pinB2, LOW);    
-  }
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Delay ");
+  Serial.print(ms);
+  Serial.println(" ms");
+#endif
+  delay(ms);
 }
 
-SoftwareSerial BT(pinTx, pinRx);
+
+/*
+
+  Bluetooth
+  - Pin 12 ---> TX // purple
+  - Pin 2  ---> RX // orange
+  // ground - blk
+  // vcc - white, gray - ground
+*/
+SoftwareSerial BT(12, 2);
+
+/*
+  Connections:
+  Motor driver
+  - Pin 3 ---> PWMA
+  - Pin 4 ---> AIN2
+  - Pin 5 ---> AIN1
+  - Pin 6 ---> STBY
+  - Pin 7 ---> BIN1
+  - Pin 8 ---> BIN2
+  - Pin 9 ---> PWMB
+*/
+TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
+
+unsigned long ready_to_read_time;
 
 void setup()
 {
-  Serial.begin (9600);
+  wheels.begin();
+
+#ifdef USE_SERIAL_MONITOR
+  Serial.begin(9600);
+#endif
 
   //configure pin modes
   pinMode(pinLed, OUTPUT);
   digitalWrite(pinLed, LOW);
-  
-  pinMode (pinA1, OUTPUT);
-  pinMode (pinA2, OUTPUT);
-  pinMode (pinB1, OUTPUT);
-  pinMode (pinB2, OUTPUT);
 
-  pinMode(pinTrig, OUTPUT);
-  pinMode(pinEcho, INPUT);
 
+  outlook.begin();
   BT.begin(38400);
   BT.println("Bluetooth is Ready");
 
   Serial.println("Ready");
-
+  ready_to_read_time = millis();
 }
 
 
-
-bool isTooClose()
-{
-  long duration;
-
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(pinTrig, LOW);
-  delayMicroseconds(5);
-  digitalWrite(pinTrig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(pinTrig, LOW);
- 
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  duration = pulseIn(pinEcho, HIGH, MAX_DURATION*10);
-
-  Serial.println(duration);
-
-  if (duration == 0)
-    return false;
-  if (duration > MAX_DURATION )
-    return false;
-  return true;
-}
-
-int speed = 0;
-
-void test()
-{
-  Serial.println("Left FWD");
-  pwm_go(1,0);
-  delay(2000);
-  Serial.println("Left STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Left REV");
-  pwm_go(-1,0);
-  delay(2000);
-  Serial.println("Left STOP");
-  pwm_go(0,0);
-  delay(500);
-  
-  Serial.println("Right FWD");
-  pwm_go(0,1);
-  delay(2000);
-  Serial.println("Right STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Right REV");
-  pwm_go(0, -1);
-  delay(2000);
-  Serial.println("Right STOP");
-  pwm_go(0,0);
-  delay(500);
-
-  Serial.println("Both FWD");
-  pwm_go(1,1);
-  delay(2000);
-  Serial.println("Both STOP");
-  pwm_go(0,0);
-  delay(500);
-  Serial.println("Both REV");
-  pwm_go(-1,-1);
-  delay(2000);
-  Serial.println("Both STOP");
-  pwm_go(0,0);
-  delay(500);
-  
-}
 
 bool obstacle = false;
-char  recent_state='s'; // Stopped
+char  recent_state = 's'; // Stopped
+
 
 void loop()
 {
-   bool isClose = isTooClose();
-   
-   if ( (!obstacle) && isClose )
-   {
-      digitalWrite(pinLed, HIGH);
-      BT.println("Obstacle! Emergency stop");
-      obstacle = true;
-   }
+  bool isClose = outlook.isInRange();
+
+  if ( (!obstacle) && isClose )
+  {
+    digitalWrite(pinLed, HIGH);
+    BT.println("Obstacle! Emergency stop");
+    obstacle = true;
+
+    wheels.Brake();
+  }
 
 
-   if ( (!isClose) && obstacle)
-   {
-      digitalWrite(pinLed, LOW);
-      BT.println("Obstacle removed");
-      obstacle = false;    
-   }
-   
-   int BluetoothData='s';
-   
-   if (BT.available())
-   {
-      BluetoothData=BT.read();
-      Serial.print("Received");
-      Serial.println(BluetoothData, HEX);
-   }
-   
-    char report='\0';
-    
-    if (recent_state != BluetoothData)
-    {
-        pwm_go(0,0);
-        report='S';
-        delay(100);
-    }
+  if ( (!isClose) && obstacle)
+  {
+    digitalWrite(pinLed, LOW);
+    BT.println("Obstacle removed");
+    obstacle = false;
+  }
 
-    recent_state = BluetoothData;
+  int BluetoothData = 's';
 
-    int aftermath = 100;
-    
-    switch (BluetoothData)
-    {
-      case 'f':
-        if (obstacle)
-        {
-          BT.println("Cant go forward, obstacle");
-          pwm_go(0,0);
-          recent_state='s';
-        }
-        else
-        {
-          pwm_go(1,1);
-          recent_state='f';
-          report = 'F';
-          aftermath = 1000;
-        }
-        break;
+  if (BT.available())
+  {
+    BluetoothData = BT.read();
+    Serial.print("Received ");
+    Serial.println((char)BluetoothData);
+  }
 
-      case 'b':
-        pwm_go(-1,-1);
-        recent_state='b';
-        report = 'B';
-        aftermath = 1000;
-        break;
+  char report = '\0';
 
-      case 'l':
-        pwm_go(-1,1);
-        recent_state='l';
-        report = 'L';
-        aftermath = 1000;
-        break;
+  if (recent_state != BluetoothData)
+  {
+    wheels.Stop();
+    report = 'S';
+    delay(100);
+  }
 
-      case 'r':
-        pwm_go(1,-1);
-        recent_state='r';
-        report = 'R';
-        aftermath = 1000;
-        break;
+  recent_state = BluetoothData;
 
-      case 's':
-        break;
- 
-      default:
-        Serial.println("Unknown command");
-        report = 'X';
-        break;
-    }
+  int aftermath = 30;
 
-     if (report != '\0')
-     {
-      BT.println(report);
-     }
-     
-     delay(aftermath);// prepare for next data ...
+  switch (BluetoothData)
+  {
+    case 'f':
+      if (obstacle)
+      {
+        BT.println("Cant go forward, obstacle");
+        wheels.Brake();
+        recent_state = 's';
+      }
+      else
+      {
+        wheels.Forward();
+        recent_state = 'f';
+        report = 'F';
+        aftermath = 100;
+      }
+      break;
+
+    case 'b':
+      wheels.Back();
+      recent_state = 'b';
+      report = 'B';
+      aftermath = 100;
+      break;
+
+    case 'l':
+      wheels.Left();
+      recent_state = 'l';
+      report = 'L';
+      aftermath = 100;
+      break;
+
+    case 'r':
+      wheels.Right();
+      recent_state = 'r';
+      report = 'R';
+      aftermath = 100;
+      break;
+
+    case 's':
+      break;
+
+    default:
+      Serial.println("Unknown command");
+      report = 'X';
+      break;
+  }
+
+  if (report != '\0')
+  {
+    BT.print(report);
+  }
+
+  delay(aftermath);// prepare for next data ...
 }
+
