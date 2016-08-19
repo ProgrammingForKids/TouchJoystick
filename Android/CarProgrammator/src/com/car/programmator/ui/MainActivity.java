@@ -5,7 +5,12 @@ import com.car.programmator.util.*;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.bluetooth.BluetoothDevice;
+import android.content.BroadcastReceiver;
 import android.content.ClipData;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
@@ -45,13 +50,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private FlowLayout		_command_aria	= null;
 	private BlueToothHelper	_bth			= null;
 	private boolean			_PerformMode	= false;
-	private MenuItem		_item			= null;
+	Eraser					_eraser			= null;
+	// private BroadcastReceiver mReceiver;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		_eraser = new Eraser(this);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
@@ -103,7 +110,36 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		ImageHelper.Store(this, OpCode._LEFT, _area_tools, _OnClickListenerOpcodeToView);
 		ImageHelper.Store(this, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
 
-	}
+		// Create a BroadcastReceiver for ACTION_FOUND
+		// mReceiver = new BroadcastReceiver()
+		// {
+		// public void onReceive(Context context, Intent intent)
+		// {
+		// if (null == _bth)
+		// {
+		// return;
+		// }
+		// String action = intent.getAction();
+		// // When discovery finds a device
+		// if (BluetoothDevice.ACTION_FOUND.equals(action))
+		// {
+		// // Get the BluetoothDevice object from the Intent
+		// BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+		// if (null != device)
+		// {
+		//
+		// _bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+		// }
+		// }
+		// ShowDevices(_bth.FoundDeviceList());
+		//
+		// }
+		// };
+		// // Register the BroadcastReceiver
+		// IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		// registerReceiver(mReceiver, filter);
+
+	}// onCreate
 
 	@Override
 	public void onResume()
@@ -113,6 +149,17 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		{
 			_bth.isConnected();
 		}
+	}
+
+	@Override
+	protected void onStop()
+	{
+		super.onStop();
+		// if (null != mReceiver)
+		// {
+		// unregisterReceiver(mReceiver);
+		// }
+		_bth.Finalize();
 	}
 
 	private void BTConnect()
@@ -252,7 +299,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_settings)
+		if (id == R.id.action_devices_list)
+		{
+			// _bth.StartDiscovery();
+		}
+		else if (id == R.id.action_settings)
 		{
 			BTConnect();
 		}

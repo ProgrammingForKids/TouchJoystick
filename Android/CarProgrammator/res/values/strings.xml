@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">CarProgrammator</string>
+    <string name="action_devices_list">BT devices list</string>
     <string name="action_settings">Settings</string>
     <string name="action_start">\u25b6 \u25a0 Start</string>
     

@@ -3,6 +3,8 @@ package com.car.programmator.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
@@ -416,5 +418,47 @@ public class BlueToothHelper
 			}
 		};
 	};
+
+	public static boolean checkConnected()
+	{
+		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+		boolean connected = false;
+		for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices())
+		{
+			try
+			{
+				try
+				{
+					Method m = device.getClass().getMethod("createRfcommSocket", new Class[] { int.class });
+					try
+					{
+						BluetoothSocket bs = (BluetoothSocket) m.invoke(device, Integer.valueOf(1));
+						bs.connect();
+						connected = true;
+						break;
+					}
+					catch (IOException e)
+					{
+					}
+				}
+				catch (IllegalArgumentException e)
+				{
+				}
+				catch (IllegalAccessException e)
+				{
+				}
+				catch (InvocationTargetException e)
+				{
+				}
+			}
+			catch (SecurityException e)
+			{
+			}
+			catch (NoSuchMethodException e)
+			{
+			}
+		}
+		return connected;
+	}
 
 }// class BlueToothHelper
