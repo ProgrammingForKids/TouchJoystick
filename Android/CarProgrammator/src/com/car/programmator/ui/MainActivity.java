@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.view.DragEvent;
@@ -38,27 +39,30 @@ import android.widget.AdapterView.OnItemClickListener;
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 
-	private final int		SB_START		= 10;
-	private final int		SB_STOP			= 11;
-	ImageHelper				_performed		= new ImageHelper();
-	ImageHelper				_selected		= new ImageHelper();
-	ImageHelper				_insert			= new ImageHelper();
-	TextView				_prompt			= null;
-	ImageView				_startBnt		= null;
-	LinearLayout			_area_tools		= null;
-	LinearLayout			_current_area	= null;
-	private FlowLayout		_command_aria	= null;
-	private BlueToothHelper	_bth			= null;
-	private boolean			_PerformMode	= false;
-	Eraser					_eraser			= null;
-	// private BroadcastReceiver mReceiver;
+	private final int			SB_START		= 10;
+	private final int			SB_STOP			= 11;
+	ImageHelper					_performed		= new ImageHelper(null);
+	ImageHelper					_selected		= new ImageHelper(new ImageHelper(null));
+	TextView					_prompt			= null;
+	ImageView					_startBnt		= null;
+	Eraser						_eraser			= null;
+	LinearLayout				_area_tools		= null;
+	LinearLayout				_current_area	= null;
+	private FlowLayout			_command_aria	= null;
+	private BlueToothHelper		_bth			= null;
+	private boolean				_PerformMode	= false;
+	private BroadcastReceiver	mReceiver		= null;
+
+	Handler						mHandler		= new Handler();
+	final long					mInterval		= 10000;
+	Thread						mCheckThread	= null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		_eraser = new Eraser(this);
+		_eraser = new Eraser(this, _selected);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
 		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
@@ -111,33 +115,61 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		ImageHelper.Store(this, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
 
 		// Create a BroadcastReceiver for ACTION_FOUND
-		// mReceiver = new BroadcastReceiver()
-		// {
-		// public void onReceive(Context context, Intent intent)
-		// {
-		// if (null == _bth)
-		// {
-		// return;
-		// }
-		// String action = intent.getAction();
-		// // When discovery finds a device
-		// if (BluetoothDevice.ACTION_FOUND.equals(action))
-		// {
-		// // Get the BluetoothDevice object from the Intent
-		// BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-		// if (null != device)
-		// {
-		//
-		// _bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
-		// }
-		// }
-		// ShowDevices(_bth.FoundDeviceList());
-		//
-		// }
-		// };
-		// // Register the BroadcastReceiver
-		// IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		// registerReceiver(mReceiver, filter);
+		mReceiver = new BroadcastReceiver()
+		{
+			public void onReceive(Context context, Intent intent)
+			{
+				if (null == _bth)
+				{
+					return;
+				}
+				String action = intent.getAction();
+				// When discovery finds a device
+				if (BluetoothDevice.ACTION_FOUND.equals(action))
+				{
+					// Get the BluetoothDevice object from the Intent
+					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+					if (null != device)
+					{
+
+						_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+					}
+				}
+			}
+		};
+		// Register the BroadcastReceiver
+		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		registerReceiver(mReceiver, filter);
+
+		mCheckThread = new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+				while (true)
+				{
+					try
+					{
+						Thread.sleep(10000);
+						mHandler.post(new Runnable()
+						{
+
+							@Override
+							public void run()
+							{
+								if (null != _bth)
+								{
+									_bth.isConnected();
+								}
+							}
+						});
+					}
+					catch (Exception e)
+					{
+					}
+				}
+			}
+		});
 
 	}// onCreate
 
@@ -147,19 +179,30 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		super.onResume();
 		if (null != _bth)
 		{
-			_bth.isConnected();
+			if (!_bth.isConnected())
+			{
+				_bth.StartDiscovery();
+			}
 		}
+		//mCheckThread.start();
 	}
 
 	@Override
 	protected void onStop()
 	{
 		super.onStop();
-		// if (null != mReceiver)
-		// {
-		// unregisterReceiver(mReceiver);
-		// }
+		mCheckThread.interrupt();
+	}
+
+	@Override
+	protected void onDestroy()
+	{
+		super.onDestroy();
 		_bth.Finalize();
+		if (null != mReceiver)
+		{
+			unregisterReceiver(mReceiver);
+		}
 	}
 
 	private void BTConnect()
@@ -185,10 +228,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 																Logger.Log.t("SELECT");
 																if (v.equals(_selected.view))
 																{
-																	_selected.UnSelect();
-																	_command_aria.removeView(_insert.view);
-																	_insert.Ini();
-																	_selected.Ini();
+																	_command_aria.removeView(_selected.linked_image.view);
+																	_selected.UnSelect().InitAll();
 																	return;
 																}
 																int count = _command_aria.getChildCount();
@@ -198,8 +239,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 																	if (test.equals(v))
 																	{
 																		_selected.Set(v, k).Select();
-																		_insert.Set(ImageHelper.CreateImage(MainActivity.this, OpCode._EMPTY), k);
-																		_command_aria.addView(_insert.view, _insert.index);
+																		_selected.linked_image.Set(ImageHelper.CreateImage(MainActivity.this, OpCode._EMPTY), k);
+																		_command_aria.addView(_selected.linked_image.view, _selected.linked_image.index);
 																		break;
 																	}
 																}
@@ -220,13 +261,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 																ImageView iv = ImageHelper.CreateImage(MainActivity.this, v.getId());
 																iv.setOnClickListener(_OnClickSelectInsert);
 																iv.setOnLongClickListener(myOnLongClickListener);
-																if (-1 < _insert.index)
+																if (-1 < _selected.linked_image.index)
 																{
-																	_command_aria.addView(iv, _insert.index);
-																	_command_aria.removeView(_insert.view);
-																	_selected.UnSelect();
-																	_insert.Ini();
-																	_selected.Ini();
+																	_command_aria.addView(iv, _selected.linked_image.index);
+
+																	_command_aria.removeView(_selected.linked_image.view);
+																	_selected.UnSelect().InitAll();
 																}
 																else
 																{
@@ -299,11 +339,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		if (id == R.id.action_devices_list)
-		{
-			// _bth.StartDiscovery();
-		}
-		else if (id == R.id.action_settings)
+//		if (id == R.id.action_devices_list)
+//		{
+//			ShowDevices(_bth.FoundDeviceList());
+//		}
+//		else 
+		if (id == R.id.action_settings)
 		{
 			BTConnect();
 		}
@@ -328,13 +369,20 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		_startBnt.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.start));
 	}
 
+	boolean test = false;
+
 	void Perform()
 	{
+		if (test)
+		{
+			_bth.Send('x');
+			return;
+		}
 		if (!_PerformMode)
 		{
 			return;
 		}
-		if (null != _insert.view)
+		if (null != _selected.linked_image.view)
 		{
 			StopPerform();
 			return;

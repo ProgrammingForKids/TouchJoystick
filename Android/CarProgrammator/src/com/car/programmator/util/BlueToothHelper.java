@@ -210,8 +210,8 @@ public class BlueToothHelper
 		else
 		{
 			ConnectedThread tmp = _connectedThread;
-
 			tmp.Cancel();
+
 			_connectedThread = new ConnectedThread(device);
 			_connectedThread.start();
 		}
@@ -252,11 +252,11 @@ public class BlueToothHelper
 
 	private class ConnectedThread extends Thread
 	{
-		private final BluetoothSocket	mmSocket;
-		private final InputStream		mmInStream;
-		private final OutputStream		mmOutStream;
+		private BluetoothSocket	mmSocket;
+		private InputStream		mmInStream;
+		private OutputStream	mmOutStream;
 
-		public ConnectedThread(BluetoothDevice device)// BluetoothSocket socket)
+		public ConnectedThread(BluetoothDevice device)
 		{
 
 			BluetoothSocket tmp = null;
@@ -381,6 +381,7 @@ public class BlueToothHelper
 			try
 			{
 				mmInStream.close();
+				mmInStream = null;
 			}
 			catch (IOException e1)
 			{
@@ -388,6 +389,7 @@ public class BlueToothHelper
 			try
 			{
 				mmOutStream.close();
+				mmOutStream = null;
 			}
 			catch (IOException e1)
 			{
@@ -395,6 +397,7 @@ public class BlueToothHelper
 			try
 			{
 				mmSocket.close();
+				mmSocket = null;
 			}
 			catch (IOException e)
 			{
