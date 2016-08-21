@@ -7,50 +7,30 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
-import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.content.ContextCompat;
-import android.text.method.ScrollingMovementMethod;
-import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.view.View.DragShadowBuilder;
 import android.view.View.OnClickListener;
-import android.view.View.OnDragListener;
-import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class MainActivity extends Activity implements BlueToothHelper.Callback
+public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
-
-	private final int			SB_START		= 10;
-	private final int			SB_STOP			= 11;
-	ImageHelper					_performed		= new ImageHelper(null);
-	ImageHelper					_selected		= new ImageHelper(new ImageHelper(null));
-	TextView					_prompt			= null;
-	ImageView					_startBnt		= null;
-	Eraser						_eraser			= null;
-	LinearLayout				_area_tools		= null;
-	LinearLayout				_current_area	= null;
-	private FlowLayout			_command_aria	= null;
 	private BlueToothHelper		_bth			= null;
-	private boolean				_PerformMode	= false;
+	private UIHelper			_ui				= null;
 	private BroadcastReceiver	mReceiver		= null;
 
 	Handler						mHandler		= new Handler();
@@ -62,58 +42,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		_eraser = new Eraser(this, _selected);
+		// _eraser = new Eraser(this, _selected);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
-		_area_tools = (LinearLayout) findViewById(R.id.area_tools);
-		_startBnt = (ImageView) findViewById(R.id.image_tools);
-		_startBnt.setId(SB_START);
-		_startBnt.setOnClickListener(new OnClickListener()
-		{
-			@Override
-			public void onClick(View v)
-			{
-				int id = _startBnt.getId();
-				switch (id)
-				{
-					case SB_START:
-						StartPerform();
-						break;
-					case SB_STOP:
-						StopPerform();
-						break;
-					default:
-						break;
-				}
-			}
-		});
-
-		_command_aria = (FlowLayout) findViewById(R.id.test);
-		_command_aria.setOnDragListener(myOnDragListener);
-
-		_prompt = (TextView) findViewById(R.id.prompt);
-		_prompt.setVisibility(View.GONE);
-		if (_prompt.isShown())
-		{
-			// make TextView scrollable
-			_prompt.setMovementMethod(new ScrollingMovementMethod());
-			// clear prompt area if LongClick
-			_prompt.setOnLongClickListener(new OnLongClickListener()
-			{
-
-				@Override
-				public boolean onLongClick(View v)
-				{
-					_prompt.setText("");
-					return true;
-				}
-			});
-		}
-		ImageHelper.Store(this, OpCode._FORWARD, _area_tools, _OnClickListenerOpcodeToView);
-		ImageHelper.Store(this, OpCode._BACK, _area_tools, _OnClickListenerOpcodeToView);
-		ImageHelper.Store(this, OpCode._LEFT, _area_tools, _OnClickListenerOpcodeToView);
-		ImageHelper.Store(this, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
-
+		_ui = new UIHelper(this);
+		_ui.registerCallBack(this);
 		// Create a BroadcastReceiver for ACTION_FOUND
 		mReceiver = new BroadcastReceiver()
 		{
@@ -184,7 +117,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				_bth.StartDiscovery();
 			}
 		}
-		//mCheckThread.start();
+		// mCheckThread.start();
 	}
 
 	@Override
@@ -215,115 +148,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			ShowDevices(_bth.DevicesList());
 		}
 	}
-
-	OnClickListener		_OnClickSelectInsert			= new OnClickListener()
-														{
-															@Override
-															public void onClick(View v)
-															{
-																if (_PerformMode)
-																{
-																	return;
-																}
-																Logger.Log.t("SELECT");
-																if (v.equals(_selected.view))
-																{
-																	_command_aria.removeView(_selected.linked_image.view);
-																	_selected.UnSelect().InitAll();
-																	return;
-																}
-																int count = _command_aria.getChildCount();
-																for (int k = 0; k < count; ++k)
-																{
-																	View test = _command_aria.getChildAt(k);
-																	if (test.equals(v))
-																	{
-																		_selected.Set(v, k).Select();
-																		_selected.linked_image.Set(ImageHelper.CreateImage(MainActivity.this, OpCode._EMPTY), k);
-																		_command_aria.addView(_selected.linked_image.view, _selected.linked_image.index);
-																		break;
-																	}
-																}
-															}
-														};
-
-	OnClickListener		_OnClickListenerOpcodeToView	= new OnClickListener()
-														{
-
-															@Override
-															public void onClick(View v)
-															{
-																if (_PerformMode)
-																{
-																	return;
-																}
-																Logger.Log.t("longTouch", "ID", v.getId());
-																ImageView iv = ImageHelper.CreateImage(MainActivity.this, v.getId());
-																iv.setOnClickListener(_OnClickSelectInsert);
-																iv.setOnLongClickListener(myOnLongClickListener);
-																if (-1 < _selected.linked_image.index)
-																{
-																	_command_aria.addView(iv, _selected.linked_image.index);
-
-																	_command_aria.removeView(_selected.linked_image.view);
-																	_selected.UnSelect().InitAll();
-																}
-																else
-																{
-																	_command_aria.addView(iv);
-																}
-															}
-														};
-
-	OnLongClickListener	myOnLongClickListener			= new OnLongClickListener()
-														{
-
-															@Override
-															public boolean onLongClick(View v)
-															{
-																if (_PerformMode)
-																{
-																	return true;
-																}
-																ClipData data = ClipData.newPlainText("", "");
-																DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(v);
-																v.startDrag(data, shadowBuilder, v, 0);
-																return true;
-															}
-
-														};
-
-	OnDragListener		myOnDragListener				= new OnDragListener()
-														{
-
-															@Override
-															public boolean onDrag(View v, DragEvent event)
-															{
-																switch (event.getAction())
-																{
-																	case DragEvent.ACTION_DRAG_STARTED:
-																		break;
-																	case DragEvent.ACTION_DRAG_ENTERED:
-																		break;
-																	case DragEvent.ACTION_DRAG_EXITED:
-																		break;
-																	case DragEvent.ACTION_DROP:
-																		break;
-																	case DragEvent.ACTION_DRAG_ENDED:
-																		if (!_PerformMode)
-																		{
-																			View view = (View) event.getLocalState();
-																			_command_aria.removeView(view);
-																		}
-																		break;
-																	default:
-																		break;
-																}
-																return true;
-															}
-
-														};
-
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
@@ -339,11 +163,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-//		if (id == R.id.action_devices_list)
-//		{
-//			ShowDevices(_bth.FoundDeviceList());
-//		}
-//		else 
+		// if (id == R.id.action_devices_list)
+		// {
+		// ShowDevices(_bth.FoundDeviceList());
+		// }
+		// else
 		if (id == R.id.action_settings)
 		{
 			BTConnect();
@@ -353,80 +177,74 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private void StartPerform()
 	{
-		_startBnt.setId(SB_STOP);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.stop));
-
-		_performed.RestoreImage(this);
-		_performed.index = 0;
-		_PerformMode = true;
-		Perform();
+		_ui.StartBntToStop();
+		_ui.ToStart();
+		_ui.PerformMode(true);
+		Performing();
 	}
 
 	private void StopPerform()
 	{
-		_PerformMode = false;
-		_startBnt.setId(SB_START);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(MainActivity.this, R.drawable.start));
+		_ui.PerformMode(false);
+		_ui.StartBntToStart();
 	}
 
-	boolean test = false;
-
-	void Perform()
+	void Performing()
 	{
-		if (test)
-		{
-			_bth.Send('x');
-			return;
-		}
-		if (!_PerformMode)
+		if (!_ui.PerformMode())
 		{
 			return;
 		}
-		if (null != _selected.linked_image.view)
+		char opcode = _ui.OpcodeToDo();
+		if (0 == opcode)
 		{
 			StopPerform();
-			return;
-		}
-		if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
-		{
-			_performed.view = _command_aria.getChildAt(_performed.index);
-			_performed.Select();
-			_bth.Send(OpCode.OpcodeC(_performed.Opcode()));
-			_performed.index += 1;
 		}
 		else
 		{
-			StopPerform();
+			_bth.Send(opcode);
 		}
 	}
 
 	private void ResposeToUiThread(char c)
 	{
 		Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
-		if (null == _performed)
+		if (!_ui.IsPerformedValid())
 		{
 			return;
 		}
-		char pc = OpCode.OpcodeC(_performed.Opcode());
-		if ((pc - c) == ('a' - 'A'))
+		char cd = _ui.OpcodeCurrent();
+		if ((cd - c) == ('a' - 'A'))
 		{
-			_performed.UnSelect();
-			Perform();
+			_ui.Unselect();
+			Performing();
 		}
 		else if (SOCKET_CLOSED == c
 				|| STOP_PERFORMANCE == c
 				|| CONNECT_ERROR == c)
 		{
 			StopPerform();
-			_performed.UnSelect();
+			_ui.Unselect();
 		}
 		else
 		{
 			StopPerform();
-			_performed.UnSelect();
-			_performed.SetImage(this, R.drawable.x);
+			_ui.Unselect();
+			_ui.PerformError();
 		}
 
+	}
+
+	@Override
+	public void onStartPerform()
+	{
+		StartPerform();
+	}
+
+	@Override
+	public void onStopPerform()
+	{
+		StopPerform();
 	}
 
 	@Override
@@ -501,4 +319,4 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	}
 
-}// MainActivity
+}//class MainActivity
