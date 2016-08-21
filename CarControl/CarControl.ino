@@ -71,7 +71,6 @@ void setup()
 
   outlook.begin();
   BT.begin(38400);
-  BT.println("Bluetooth is Ready");
 
   Serial.println("Ready");
   ready_to_read_time = millis();
@@ -85,14 +84,14 @@ char  recent_state = 's'; // Stopped
 
 void loop()
 {
+  char report = '\0';
   bool isClose = outlook.isInRange();
 
   if ( (!obstacle) && isClose )
   {
     digitalWrite(pinLed, HIGH);
-    BT.println("Obstacle! Emergency stop");
     obstacle = true;
-
+    report = 'O';
     wheels.Brake();
   }
 
@@ -100,7 +99,6 @@ void loop()
   if ( (!isClose) && obstacle)
   {
     digitalWrite(pinLed, LOW);
-    BT.println("Obstacle removed");
     obstacle = false;
   }
 
@@ -113,7 +111,6 @@ void loop()
     Serial.println((char)BluetoothData);
   }
 
-  char report = '\0';
 
   if (recent_state != BluetoothData)
   {
@@ -131,7 +128,6 @@ void loop()
     case 'f':
       if (obstacle)
       {
-        BT.println("Cant go forward, obstacle");
         wheels.Brake();
         recent_state = 's';
       }
@@ -166,6 +162,11 @@ void loop()
       break;
 
     case 's':
+      report = 'S';
+      break;
+
+    case 'h':
+      report = 'H';
       break;
 
     default:
