@@ -10,7 +10,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.Gravity;
@@ -148,6 +147,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			ShowDevices(_bth.DevicesList());
 		}
 	}
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
@@ -163,15 +163,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		// automatically handle clicks on the Home/Up button, so long
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
-		// if (id == R.id.action_devices_list)
-		// {
-		// ShowDevices(_bth.FoundDeviceList());
-		// }
-		// else
 		if (id == R.id.action_settings)
 		{
 			BTConnect();
 		}
+		// else if (id == R.id.action_devices_list)
+		// {
+		// // ShowDevices(_bth.FoundDeviceList());
+		// }
+
 		return super.onOptionsItemSelected(item);
 	}
 
@@ -214,22 +214,23 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			return;
 		}
 		char cd = _ui.OpcodeCurrent();
+		_ui.Unselect();
 		if ((cd - c) == ('a' - 'A'))
 		{
-			_ui.Unselect();
 			Performing();
 		}
-		else if (SOCKET_CLOSED == c
-				|| STOP_PERFORMANCE == c
-				|| CONNECT_ERROR == c)
+		else if (STOP_PERFORMANCE == c)
 		{
 			StopPerform();
-			_ui.Unselect();
+		}
+		else if (SOCKET_CLOSED == c || CONNECT_ERROR == c)
+		{
+			StopPerform();
+			_bth.SetLED(false);
 		}
 		else
 		{
 			StopPerform();
-			_ui.Unselect();
 			_ui.PerformError();
 		}
 
@@ -270,22 +271,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
 		dialog.setContentView(R.layout.popup_window);
 		{
-			ListView listview = (ListView) dialog.findViewById(R.id.listView1);
-			ArrayAdapter<String> _adapter_bonded = new ArrayAdapter<String>(getApplicationContext(), android.R.layout.simple_spinner_item, list)
-			{
-				public View getView(int position, View convertView, android.view.ViewGroup parent)
-				{
-					View view = super.getView(position, convertView, parent);
-					TextView tv = (TextView) view.findViewById(android.R.id.text1);
-					tv.setTextColor(Color.BLACK);
-					tv.setPadding(8, 16, 2, 16);
-					return view;
-				};
-			};
-			listview.setAdapter(_adapter_bonded);
-			listview.setOnItemClickListener(new OnItemClickListener()
+			ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.activity_listview, list);
+
+			ListView listView = (ListView) dialog.findViewById(R.id.listView1);
+			listView.setAdapter(adapter);
+			listView.setOnItemClickListener(new OnItemClickListener()
 			{
 
+				@Override
 				public void onItemClick(AdapterView<?> parent, View view, int position, long id)
 				{
 					TextView tv = (TextView) view;
@@ -319,4 +312,4 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	}
 
-}//class MainActivity
+}// class MainActivity

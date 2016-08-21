@@ -64,6 +64,12 @@ public class BlueToothHelper
 
 	}
 
+	public void SetLED(boolean bGreen)
+	{
+		int resId = (bGreen) ? R.drawable.green : R.drawable.red;
+		this._activity.getActionBar().setIcon(resId);
+	}
+
 	public boolean isConnected()
 	{
 		boolean ret = false;
