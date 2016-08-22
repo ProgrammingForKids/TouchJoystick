@@ -15,29 +15,17 @@ import android.widget.LinearLayout;
 
 class ImageHelper
 {
-	public View					view	= null;
-	public int					index	= -1;
-	public final ImageHelper	linked_image;
+	public View	view	= null;
+	public int	index	= -1;
 
-	public ImageHelper(ImageHelper link)
+	public ImageHelper()
 	{
-		linked_image = link;
 	}
 
 	void Ini()
 	{
 		this.view = null;
 		this.index = -1;
-	}
-
-	void InitAll()
-	{
-		this.view = null;
-		this.index = -1;
-		if (null != linked_image)
-		{
-			linked_image.Ini();
-		}
 	}
 
 	ImageHelper Set(View v, int index)

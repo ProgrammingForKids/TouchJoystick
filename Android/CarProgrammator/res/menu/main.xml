@@ -21,7 +21,7 @@
         android:icon="@drawable/start"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
-        android:title="@string/action_start"/
+        android:title="@string/action_start"/
     -->
 
 </menu>
