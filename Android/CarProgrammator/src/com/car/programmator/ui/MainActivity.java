@@ -41,7 +41,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		// _eraser = new Eraser(this, _selected);
 		_bth = new BlueToothHelper(this);
 		_bth.registerCallBack(this);
 		_ui = new UIHelper(this);

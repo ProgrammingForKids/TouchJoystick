@@ -20,9 +20,8 @@ public class UIHelper
 {
 	private final int	SB_START		= 10;
 	private final int	SB_STOP			= 11;
-	final Activity		activity;
-	ImageHelper			_performed		= new ImageHelper(null);
-	ImageHelper			_selected		= new ImageHelper(new ImageHelper(null));
+	ImageHelper			_performed		= new ImageHelper();
+	ImageSelected		_imgselected	= null;
 	TextView			_prompt			= null;
 	ImageView			_startBnt		= null;
 	Eraser				_eraser			= null;
@@ -30,6 +29,7 @@ public class UIHelper
 	LinearLayout		_current_area	= null;
 	private FlowLayout	_command_aria	= null;
 	private boolean		_PerformMode	= false;
+	final Activity		activity;
 
 	public interface Callback
 	{
@@ -58,7 +58,8 @@ public class UIHelper
 	public UIHelper(Activity activity)
 	{
 		this.activity = activity;
-		_eraser = new Eraser(activity, _selected);
+		_imgselected = new ImageSelected(activity);
+		_eraser = new Eraser(activity, _imgselected);
 		_area_tools = (LinearLayout) activity.findViewById(R.id.area_tools);
 		_startBnt = (ImageView) activity.findViewById(R.id.image_tools);
 		_startBnt.setId(SB_START);
@@ -120,21 +121,20 @@ public class UIHelper
 																	return;
 																}
 																Logger.Log.t("SELECT");
-																if (v.equals(_selected.view))
+																if (v.equals(_imgselected.SelectedView()))
 																{
-																	_command_aria.removeView(_selected.linked_image.view);
-																	_selected.UnSelect().InitAll();
+																	_command_aria.removeView(_imgselected.InsertView());
+																	_imgselected.Unselect();
 																	return;
 																}
 																int count = _command_aria.getChildCount();
-																for (int k = 0; k < count; ++k)
+																for (int index = 0; index < count; ++index)
 																{
-																	View test = _command_aria.getChildAt(k);
+																	View test = _command_aria.getChildAt(index);
 																	if (test.equals(v))
 																	{
-																		_selected.Set(v, k).Select();
-																		_selected.linked_image.Set(ImageHelper.CreateImage(activity, OpCode._EMPTY), k);
-																		_command_aria.addView(_selected.linked_image.view, _selected.linked_image.index);
+																		_imgselected.Set(v, index);
+																		_command_aria.addView(_imgselected.InsertView(), index);
 																		break;
 																	}
 																}
@@ -155,12 +155,11 @@ public class UIHelper
 																ImageView iv = ImageHelper.CreateImage(activity, v.getId());
 																iv.setOnClickListener(_OnClickSelectInsert);
 																iv.setOnLongClickListener(myOnLongClickListener);
-																if (-1 < _selected.linked_image.index)
+																if (-1 < _imgselected.InsertIndex())
 																{
-																	_command_aria.addView(iv, _selected.linked_image.index);
-
-																	_command_aria.removeView(_selected.linked_image.view);
-																	_selected.UnSelect().InitAll();
+																	_command_aria.addView(iv, _imgselected.InsertIndex());
+																	_command_aria.removeView(_imgselected.InsertView());
+																	_imgselected.Unselect();
 																}
 																else
 																{
@@ -285,7 +284,7 @@ public class UIHelper
 
 	boolean IsSelected()
 	{
-		return (null != _selected.linked_image.view);
+		return _imgselected.IsSelected();
 	}
 
 }// class UIHelper

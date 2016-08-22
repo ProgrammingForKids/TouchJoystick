@@ -10,9 +10,9 @@ public class Eraser
 {
 	private final ImageView		_eraser;
 	private final FlowLayout	_command_aria;
-	private final ImageHelper	_selected_image;
+	private final ImageSelected	_selected_image;
 
-	public Eraser(Activity activity, final ImageHelper selectedImage)
+	public Eraser(Activity activity, final ImageSelected selectedImage)
 	{
 		_selected_image = selectedImage;
 		_command_aria = (FlowLayout) activity.findViewById(R.id.test);
@@ -24,14 +24,11 @@ public class Eraser
 			public void onClick(View v)
 			{
 				int index = -1;
-				if (_selected_image.linked_image.IsActive())
+				if (_selected_image.IsInsertActive())
 				{
-					index = _selected_image.index;
-					if (null != _selected_image)
-					{
-						_command_aria.removeView(_selected_image.linked_image.view);
-						_selected_image.UnSelect().InitAll();
-					}
+					index = _selected_image.InsertIndex();
+					_command_aria.removeView(_selected_image.InsertView());
+					_selected_image.Unselect();
 				}
 				else
 				{
