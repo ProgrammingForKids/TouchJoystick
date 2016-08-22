@@ -83,6 +83,8 @@ void setup()
   outlookConstrain.set(0);
 }
 
+static const unsigned long MotionTime = 1000;
+
 void loop()
 {
   if ( (! bStopped) && outlookConstrain.check() )
@@ -102,7 +104,7 @@ void loop()
 
   if ( ongoingOp == '\0' && actionConstrain.check() )
   {
-    actionConstrain.set(500);
+    actionConstrain.set(MotionTime);
     if (BT.available())
     {
       ongoingOp = BT.read();
