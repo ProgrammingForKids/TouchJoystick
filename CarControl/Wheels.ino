@@ -51,7 +51,7 @@ bool Wheels::Stop()
   {
     doStandby();
   }
-  return true;
+  return bA && bB;
 }
 
 bool Wheels::Brake()

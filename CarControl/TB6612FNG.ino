@@ -102,14 +102,16 @@ class TB6612FNG::TBMotor : public Wheels::Motor
     
     bool GoClockwise()
     {
+      bool retval = Rotate(HIGH, LOW);
       Report("Clockwise");
-      return Rotate(HIGH, LOW);
+      return retval;
     }
     
     bool GoCounterclockwise()
     {
+      bool retval = Rotate(LOW, HIGH);
       Report("Counterclockwise");
-      return Rotate(LOW, HIGH);
+      return retval;
     }
     
     bool Stop()

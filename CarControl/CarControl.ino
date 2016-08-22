@@ -197,8 +197,13 @@ void loop()
     }
     break;
 
+  case '\0':
+    break;
+
   default:
     reply = 'X';
+    ongoingOp = '\0';
+    actionConstrain.set(0);
     break;
   }  
 
