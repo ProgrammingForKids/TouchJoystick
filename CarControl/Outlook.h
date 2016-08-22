@@ -3,9 +3,9 @@
 
 class Outlook
 {
-  const int pinEcho;
-  const int pinTrig;
-  const unsigned long delay_for_range;
+  const int _pinEcho;
+  const int _pinTrig;
+  const unsigned long _delay_for_range;
 
 public:
   Outlook(int echo, int trig, unsigned long range);

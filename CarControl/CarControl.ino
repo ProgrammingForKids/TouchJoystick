@@ -3,10 +3,8 @@ const unsigned long MAX_DISTANCE = 35;
 #include <SoftwareSerial.h>// import the serial library
 
 #include "TB6612FNG.h"
-
-
 #include "Outlook.h"
-
+#include "TimeConstrain.h"
 /*
  * Ultrasonic sensor
   - Pin 10 ---> echo // yellow
@@ -14,22 +12,6 @@ const unsigned long MAX_DISTANCE = 35;
 // blue - vcc
 */
 Outlook outlook(10, 11, MAX_DISTANCE);
-
-int pinLed = 13;
-
-
-#define USE_SERIAL_MONITOR
-
-void Delay(int ms)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Delay ");
-  Serial.print(ms);
-  Serial.println(" ms");
-#endif
-  delay(ms);
-}
-
 
 /*
 
@@ -54,7 +36,27 @@ SoftwareSerial BT(12, 2);
 */
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
-unsigned long ready_to_read_time;
+int pinLed = 13;
+
+
+TimeConstrain wheelsConstrain;
+TimeConstrain actionConstrain;
+TimeConstrain outlookConstrain;
+
+#define USE_SERIAL_MONITOR
+
+void Delay(int ms)
+{
+#ifdef USE_SERIAL_MONITOR
+  Serial.print("Delay ");
+  Serial.print(ms);
+  Serial.println(" ms");
+#endif
+  delay(ms);
+}
+
+bool bStopped;
+char ongoingOp;
 
 void setup()
 {
@@ -73,113 +75,137 @@ void setup()
   BT.begin(38400);
 
   Serial.println("Ready");
-  ready_to_read_time = millis();
+  bStopped = true;
+  ongoingOp = '\0';
+
+  wheelsConstrain.set(0);
+  actionConstrain.set(0);
+  outlookConstrain.set(0);
 }
-
-
-
-bool obstacle = false;
-char  recent_state = 's'; // Stopped
-
 
 void loop()
 {
-  char report = '\0';
-  bool isClose = outlook.isInRange();
-
-  if ( (!obstacle) && isClose )
+  if ( (! bStopped) && outlookConstrain.check() )
   {
-    digitalWrite(pinLed, HIGH);
-    obstacle = true;
-    report = 'O';
-    wheels.Brake();
+    outlookConstrain.set(50);
+    if ( outlook.isInRange() )
+    { 
+      wheels.Brake();
+      bStopped = true;
+      BT.print('O');
+      Serial.println("Obstacle");
+      return;
+    }
   }
 
+  char reply = '\0';
 
-  if ( (!isClose) && obstacle)
+  if ( ongoingOp == '\0' && actionConstrain.check() )
   {
-    digitalWrite(pinLed, LOW);
-    obstacle = false;
+    actionConstrain.set(500);
+    if (BT.available())
+    {
+      ongoingOp = BT.read();
+      reply = ongoingOp + 'A' - 'a';
+    }
+    else if (! bStopped)
+    {
+      ongoingOp = 's';
+      reply = 'S';
+    }
   }
 
-  int BluetoothData = 's';
-
-  if (BT.available())
+  switch (ongoingOp)
   {
-    BluetoothData = BT.read();
-    Serial.print("Received ");
-    Serial.println((char)BluetoothData);
-  }
+  case 'h':
+    actionConstrain.set(0);
+    ongoingOp = '\0';
+    break;
 
-
-  if (recent_state != BluetoothData)
-  {
-    wheels.Stop();
-    report = 'S';
-    delay(100);
-  }
-
-  recent_state = BluetoothData;
-
-  int aftermath = 30;
-
-  switch (BluetoothData)
-  {
-    case 'f':
-      if (obstacle)
+  case 'f':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Forward())
       {
-        wheels.Brake();
-        recent_state = 's';
+        ongoingOp = '\0';
       }
       else
       {
-        wheels.Forward();
-        recent_state = 'f';
-        report = 'F';
-        aftermath = 100;
+        wheelsConstrain.set(20);
       }
-      break;
+    }
+    bStopped  = false;
+    break;
 
-    case 'b':
-      wheels.Back();
-      recent_state = 'b';
-      report = 'B';
-      aftermath = 100;
-      break;
+  case 'b':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Back())
+      {
+        ongoingOp = '\0';
+      }
+      else
+      {
+        wheelsConstrain.set(20);
+      }
+    }
+    bStopped  = false;
+    break;
 
-    case 'l':
-      wheels.Left();
-      recent_state = 'l';
-      report = 'L';
-      aftermath = 100;
-      break;
+  case 'l':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Left())
+      {
+        ongoingOp = '\0';
+      }
+      else
+      {
+        wheelsConstrain.set(20);
+      }
+    }
+    bStopped  = false;
+    break;
 
-    case 'r':
-      wheels.Right();
-      recent_state = 'r';
-      report = 'R';
-      aftermath = 100;
-      break;
+  case 'r':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Right())
+      {
+        ongoingOp = '\0';
+      }
+      else
+      {
+        wheelsConstrain.set(20);
+      }
+    }
+    bStopped  = false;
+    break;
+    
+  case 's':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Stop())
+      {
+        ongoingOp = '\0';
+        bStopped  = true;
+      }
+      else
+      {
+        wheelsConstrain.set(20);
+      }
+    }
+    break;
 
-    case 's':
-      report = 'S';
-      break;
+  default:
+    reply = 'X';
+    break;
+  }  
 
-    case 'h':
-      report = 'H';
-      break;
-
-    default:
-      Serial.println("Unknown command");
-      report = 'X';
-      break;
-  }
-
-  if (report != '\0')
+  if (reply != '\0')
   {
-    BT.print(report);
+    BT.print(reply);
   }
 
-  delay(aftermath);// prepare for next data ...
 }
 
