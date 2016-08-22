@@ -1,67 +1,52 @@
 package com.car.programmator.util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.UUID;
-
 import com.car.programmator.ui.R;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.os.Handler;
 
-public class BlueToothHelper
+public class BlueToothHelper implements BluetoothConnectedThread.Callback
 {
-	static final int			REQUEST_ENABLE_BT	= 1;
-	final static int			RECIEVE_MESSAGE		= 1;
-	private final String		device_name			= "Unknown";
+	static final int			REQUEST_ENABLE_BT			= 1;
+	final static int			RECIEVE_MESSAGE				= 1;
+	private final String		device_name					= "Unknown";
 	final Activity				_activity;
-	private BluetoothAdapter	_bluetoothAdapter	= null;
-	private ConnectedThread		_connectedThread	= null;
-	private BluetoothHandler	_handler			= null;
-	private ArrayList<String>	_bondedDeviceList	= null;
-	private ArrayList<String>	_foundDeviceList	= null;
-	private String				_device_name		= device_name;
+	private BluetoothAdapter	_bluetoothAdapter			= null;
+	BluetoothConnectedThread	_BluetoothConnectedThread	= null;
+	private ArrayList<String>	_bondedDeviceList			= null;
+	private ArrayList<String>	_foundDeviceList			= null;
+	private String				_device_name				= device_name;
 
 	public ArrayList<String> DevicesList()
 	{
 		return _bondedDeviceList;
 	}
 
-	private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-
 	public interface Callback
 	{
-		final char	CONNECT_ERROR		= 'Y';
-		final char	SOCKET_CLOSED		= 'Z';
-		final char	STOP_PERFORMANCE	= 'S';
-
+		final char	CONNECT_ERROR		= BluetoothConnectedThread.Callback.CONNECT_ERROR;
+		final char	SOCKET_CLOSED		= BluetoothConnectedThread.Callback.SOCKET_CLOSED;
+		final char	STOP_PERFORMANCE	= BluetoothConnectedThread.Callback.STOP_PERFORMANCE;
 		void BTRespose(char c);
 	}
 
-	static private Callback mCallback;
+	private Callback mCallback;
 
 	public void registerCallBack(Callback callback)
 	{
-		BlueToothHelper.mCallback = callback;
+		this.mCallback = callback;
 	}
 
 	public BlueToothHelper(Activity activity)
 	{
-		this._activity = activity;
+		_activity = activity;
 		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		_handler = new BluetoothHandler();
 		_bondedDeviceList = new ArrayList<String>();
 		_foundDeviceList = new ArrayList<String>();
-
 	}
 
 	public void SetLED(boolean bGreen)
@@ -73,9 +58,9 @@ public class BlueToothHelper
 	public boolean isConnected()
 	{
 		boolean ret = false;
-		if (null != _connectedThread)
+		if (null != _BluetoothConnectedThread)
 		{
-			ret = _connectedThread.isConnected();
+			ret = _BluetoothConnectedThread.isConnected();
 		}
 		String title = _device_name;// + " : " + ((ret) ? "Connected" : "Disconnected");
 		this._activity.getActionBar().setTitle(title);
@@ -92,9 +77,10 @@ public class BlueToothHelper
 	public void Finalize()
 	{
 		_device_name = device_name;
-		if (null != _connectedThread)
+		if (null != _BluetoothConnectedThread)
 		{
-			_connectedThread.Cancel();
+			_BluetoothConnectedThread.Cancel();
+			_BluetoothConnectedThread.interrupt();
 		}
 	}
 
@@ -158,8 +144,6 @@ public class BlueToothHelper
 			status = "Bluetooth Off";
 		}
 		Logger.Log.t("BluetoothStatus", status);
-		// this._activity.getActionBar().setTitle(status);
-		// Toast.makeText(this._activity.getBaseContext(), status, Toast.LENGTH_LONG).show();
 	}
 
 	public boolean isReady()
@@ -208,19 +192,18 @@ public class BlueToothHelper
 			_device_name = device_name;
 			this._activity.getActionBar().setTitle("No Bluetooth Connection");
 		}
-		if (null == _connectedThread)
-		{
-			_connectedThread = new ConnectedThread(device);
-			_connectedThread.start();
-		}
-		else
-		{
-			ConnectedThread tmp = _connectedThread;
-			tmp.Cancel();
 
-			_connectedThread = new ConnectedThread(device);
-			_connectedThread.start();
+		if (null != _BluetoothConnectedThread)
+		{
+			BluetoothConnectedThread tmp = _BluetoothConnectedThread;
+			tmp.Cancel();
+			tmp.interrupt();
 		}
+		
+		
+		_BluetoothConnectedThread = new BluetoothConnectedThread(this);
+		_BluetoothConnectedThread.Init(_bluetoothAdapter, mac);
+		_BluetoothConnectedThread.start();
 		new android.os.Handler().postDelayed(
 				new Runnable()
 				{
@@ -234,9 +217,9 @@ public class BlueToothHelper
 
 	public void Send(final String comm)
 	{
-		if (null != _connectedThread)
+		if (null != _BluetoothConnectedThread)
 		{
-			_connectedThread.Send(comm);
+			_BluetoothConnectedThread.Send(comm);
 		}
 		else
 		{
@@ -246,9 +229,9 @@ public class BlueToothHelper
 
 	public void Send(final char c)
 	{
-		if (null != _connectedThread)
+		if (null != _BluetoothConnectedThread)
 		{
-			_connectedThread.Send(c);
+			_BluetoothConnectedThread.Send(c);
 		}
 		else
 		{
@@ -256,218 +239,9 @@ public class BlueToothHelper
 		}
 	}
 
-	private class ConnectedThread extends Thread
+	@Override
+	public void BluetoothRespose(char c)
 	{
-		private BluetoothSocket	mmSocket;
-		private InputStream		mmInStream;
-		private OutputStream	mmOutStream;
-
-		public ConnectedThread(BluetoothDevice device)
-		{
-
-			BluetoothSocket tmp = null;
-			try
-			{
-				tmp = device.createRfcommSocketToServiceRecord(MY_UUID);
-			}
-			catch (IOException e)
-			{
-			}
-			mmSocket = tmp;
-			// mmSocket = socket;
-			InputStream tmpIn = null;
-			OutputStream tmpOut = null;
-			if (null != mmSocket)
-			{ // Get the input and output streams, using temp objects because
-				// member streams are final
-				try
-				{
-					tmpIn = mmSocket.getInputStream();
-					tmpOut = mmSocket.getOutputStream();
-				}
-				catch (IOException e)
-				{
-					Logger.Log.t("mmSocket.*Stream()", "is failed");
-				}
-
-			}
-			else
-			{
-				Logger.Log.t("mmSocket", "is null");
-			}
-			mmInStream = tmpIn;
-			mmOutStream = tmpOut;
-		}
-
-		public void run()
-		{
-			_bluetoothAdapter.cancelDiscovery();
-			try
-			{
-				mmSocket.connect();
-			}
-			catch (IOException connectException)
-			{
-				Logger.Log.t("mmSocket.connect()", "is failed");
-				try
-				{
-					mmSocket.close();
-				}
-				catch (IOException closeException)
-				{
-					Logger.Log.t("mmSocket.close()", "is failed");
-				}
-				mCallback.BTRespose(Callback.CONNECT_ERROR);
-				return;
-			}
-			byte[] buffer = new byte[256]; // buffer store for the stream
-			int bytes; // bytes returned from read()
-
-			// Keep listening to the InputStream until an exception occurs
-			while (true)
-			{
-				try
-				{
-					// Read from the InputStream
-					bytes = mmInStream.read(buffer);
-					_handler.obtainMessage(RECIEVE_MESSAGE, bytes, -1, buffer).sendToTarget();
-				}
-				catch (IOException e)
-				{
-					break;
-				}
-			}
-			Logger.Log.t("Thread END");
-		}
-
-		public boolean isConnected()
-		{
-			if (null == mmSocket)
-			{
-				return false;
-			}
-			return mmSocket.isConnected();
-		}
-
-		/* Call this from the main activity to send data to the remote device */
-		public void Send(char c)
-		{
-			if (0 == c)
-			{
-				return;
-			}
-			try
-			{
-				mmOutStream.write(c);
-			}
-			catch (IOException e)
-			{
-				mCallback.BTRespose(Callback.SOCKET_CLOSED);
-				Logger.Log.t(" Send(char)", e.getMessage());
-			}
-		}
-
-		public void Send(String message)
-		{
-			byte[] msgBuffer = message.getBytes();
-			try
-			{
-				mmOutStream.write(msgBuffer);
-			}
-			catch (IOException e)
-			{
-				Logger.Log.t("Send(String)", e.getMessage());
-			}
-		}
-
-		/* Call this from the main activity to shutdown the connection */
-		public void Cancel()
-		{
-			interrupt();
-			try
-			{
-				mmInStream.close();
-				mmInStream = null;
-			}
-			catch (IOException e1)
-			{
-			}
-			try
-			{
-				mmOutStream.close();
-				mmOutStream = null;
-			}
-			catch (IOException e1)
-			{
-			}
-			try
-			{
-				mmSocket.close();
-				mmSocket = null;
-			}
-			catch (IOException e)
-			{
-			}
-		}
-	}// class ConnectedThread
-
-	private static class BluetoothHandler extends Handler
-	{
-		public void handleMessage(android.os.Message msg)
-		{
-			switch (msg.what)
-			{
-				case BlueToothHelper.RECIEVE_MESSAGE:
-					byte[] readBuf = (byte[]) msg.obj;
-					String strIncom = new String(readBuf, 0, msg.arg1);
-					mCallback.BTRespose(strIncom.charAt(0));
-					break;
-				default:
-					break;
-			}
-		};
-	};
-
-	public static boolean checkConnected()
-	{
-		BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		boolean connected = false;
-		for (BluetoothDevice device : mBluetoothAdapter.getBondedDevices())
-		{
-			try
-			{
-				try
-				{
-					Method m = device.getClass().getMethod("createRfcommSocket", new Class[] { int.class });
-					try
-					{
-						BluetoothSocket bs = (BluetoothSocket) m.invoke(device, Integer.valueOf(1));
-						bs.connect();
-						connected = true;
-						break;
-					}
-					catch (IOException e)
-					{
-					}
-				}
-				catch (IllegalArgumentException e)
-				{
-				}
-				catch (IllegalAccessException e)
-				{
-				}
-				catch (InvocationTargetException e)
-				{
-				}
-			}
-			catch (SecurityException e)
-			{
-			}
-			catch (NoSuchMethodException e)
-			{
-			}
-		}
-		return connected;
+		mCallback.BTRespose(c);
 	}
-
 }// class BlueToothHelper
