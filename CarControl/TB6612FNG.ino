@@ -121,7 +121,8 @@ class TB6612FNG::TBMotor : public Wheels::Motor
       if (_speed > 0)
       {
         _speed = SpeedStepDown();
-        analogWrite(_pinPWM, _speed);
+        if (_speed > 0)
+          analogWrite(_pinPWM, _speed);
         retval = false;
       }
 
@@ -147,6 +148,8 @@ class TB6612FNG::TBMotor : public Wheels::Motor
     bool Brake()
     {
       analogWrite(_pinPWM, 0);
+      digitalWrite(_pin1, LOW);
+      digitalWrite(_pin2, LOW);
       _speed = 0;
       _val1 = LOW;
       _val2 = LOW;
