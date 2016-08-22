@@ -5,6 +5,8 @@ const unsigned long MAX_DISTANCE = 35;
 #include "TB6612FNG.h"
 #include "Outlook.h"
 #include "TimeConstrain.h"
+#include "Log.h"
+
 /*
  * Ultrasonic sensor
   - Pin 10 ---> echo // yellow
@@ -45,15 +47,6 @@ TimeConstrain outlookConstrain;
 
 #define USE_SERIAL_MONITOR
 
-void Delay(int ms)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Delay ");
-  Serial.print(ms);
-  Serial.println(" ms");
-#endif
-  delay(ms);
-}
 
 bool bStopped;
 char ongoingOp;
@@ -62,9 +55,7 @@ void setup()
 {
   wheels.begin();
 
-#ifdef USE_SERIAL_MONITOR
-  Serial.begin(9600);
-#endif
+  Log::begin();
 
   //configure pin modes
   pinMode(pinLed, OUTPUT);
@@ -74,7 +65,7 @@ void setup()
   outlook.begin();
   BT.begin(38400);
 
-  Serial.println("Ready");
+  Log("Ready");
   bStopped = true;
   ongoingOp = '\0';
 
@@ -83,35 +74,57 @@ void setup()
   outlookConstrain.set(0);
 }
 
-static const unsigned long MotionTime = 1000;
+static const unsigned long RunningTime = 500;
+static const unsigned long RotationTime = 150;
 
-void loop()
+bool bOutlookRequired = false;
+
+bool ProbeOutlook()
 {
-  if ( (! bStopped) && outlookConstrain.check() )
+  if (bOutlookRequired && outlookConstrain.check() && ongoingOp == 'f')
   {
-    outlookConstrain.set(50);
     if ( outlook.isInRange() )
     { 
       wheels.Brake();
       bStopped = true;
+      bOutlookRequired = false;
       BT.print('O');
-      Serial.println("Obstacle");
-      return;
+      Log("Obstacle");
+      ongoingOp = '\0';
+      return false;
+    }
+    else
+    {
+      outlookConstrain.set(50);    
     }
   }
 
-  char reply = '\0';
+  return true;
+}
 
+void loop()
+{
+  if ( ! ProbeOutlook() )
+  {
+    Log("Stopping before obstacle");
+    return;
+  }
+
+  char reply = '\0';
+  bool bSetActionConstrain = false;
+  
   if ( ongoingOp == '\0' && actionConstrain.check() )
   {
-    actionConstrain.set(MotionTime);
     if (BT.available())
     {
+      bSetActionConstrain = true;
       ongoingOp = BT.read();
       reply = ongoingOp + 'A' - 'a';
+      Log("Fetched command ")(ongoingOp);
     }
     else if (! bStopped)
     {
+      Log("No command received, stopping");
       ongoingOp = 's';
       reply = 'S';
     }
@@ -125,60 +138,88 @@ void loop()
     break;
 
   case 'f':
+    bOutlookRequired = true;
+    if ( ! ProbeOutlook() )
+    {
+      return;
+    }
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RunningTime);
+    }
     if (wheelsConstrain.check())
     {
       if (wheels.Forward())
       {
         ongoingOp = '\0';
+        Log("Accomplished Forward");
       }
       else
       {
-        wheelsConstrain.set(20);
+        wheelsConstrain.set(10);
       }
     }
     bStopped  = false;
     break;
 
   case 'b':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RunningTime);
+    }
     if (wheelsConstrain.check())
     {
       if (wheels.Back())
       {
         ongoingOp = '\0';
+        Log("Accomplished Back");
       }
       else
       {
-        wheelsConstrain.set(20);
+        wheelsConstrain.set(10);
       }
     }
     bStopped  = false;
     break;
 
   case 'l':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RotationTime);
+    }
     if (wheelsConstrain.check())
     {
       if (wheels.Left())
       {
         ongoingOp = '\0';
+        Log("Accomplished Left");
       }
       else
       {
-        wheelsConstrain.set(20);
+        wheelsConstrain.set(2);
       }
     }
     bStopped  = false;
     break;
 
   case 'r':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RotationTime);
+    }
     if (wheelsConstrain.check())
     {
       if (wheels.Right())
       {
+        Log("Accomplished Right");
         ongoingOp = '\0';
       }
       else
       {
-        wheelsConstrain.set(20);
+        wheelsConstrain.set(2);
       }
     }
     bStopped  = false;
@@ -191,10 +232,12 @@ void loop()
       {
         ongoingOp = '\0';
         bStopped  = true;
+        bOutlookRequired = false;
+        Log("Accomplished Stop");
       }
       else
       {
-        wheelsConstrain.set(20);
+        wheelsConstrain.set(5);
       }
     }
     break;

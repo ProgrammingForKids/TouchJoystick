@@ -8,6 +8,7 @@ class TB6612FNG : public Wheels
     class TBMotor;
 
     int _pinSTDBY;
+    bool _bEnabled;
 
   public:
     TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB);

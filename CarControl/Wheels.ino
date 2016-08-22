@@ -8,7 +8,7 @@ Wheels::Wheels()
 
 bool Wheels::Left()
 {
-  Serial.println("Wheels::Left");
+  Log("Wheels::Left");
   doEnable();
   bool bA = _mA->GoCounterclockwise();
   bool bB = _mB->GoClockwise();
@@ -17,7 +17,7 @@ bool Wheels::Left()
 
 bool Wheels::Right()
 {
-  Serial.println("Wheels::Right");
+  Log("Wheels::Right");
   doEnable();
   bool bA = _mA->GoClockwise();
   bool bB = _mB->GoCounterclockwise();
@@ -26,7 +26,7 @@ bool Wheels::Right()
 
 bool Wheels::Forward()
 {
-  Serial.println("Wheels::Forward");
+  Log("Wheels::Forward");
   doEnable();
   bool bA = _mA->GoClockwise();
   bool bB = _mB->GoClockwise();
@@ -35,7 +35,7 @@ bool Wheels::Forward()
 
 bool Wheels::Back()
 {
-  Serial.println("Wheels::Back");
+  Log("Wheels::Back");
   doEnable();
   bool bA = _mA->GoCounterclockwise();
   bool bB = _mB->GoCounterclockwise();
@@ -44,7 +44,7 @@ bool Wheels::Back()
 
 bool Wheels::Stop()
 {
-  Serial.println("Wheels::Stop");
+  Log("Wheels::Stop");
   bool bA = _mA->Stop();
   bool bB = _mB->Stop();
   if (bA && bB)
@@ -56,7 +56,7 @@ bool Wheels::Stop()
 
 bool Wheels::Brake()
 {
-  Serial.println("Wheels::Brake");
+  Log("Wheels::Brake");
   bool bA = _mA->Brake();
   bool bB = _mB->Brake();
   doStandby();

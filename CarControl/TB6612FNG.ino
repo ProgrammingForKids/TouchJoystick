@@ -1,9 +1,10 @@
 #include "TB6612FNG.h"
+#include "Log.h"
 
 class TB6612FNG::TBMotor : public Wheels::Motor
 {
-    static const int Step = 32;
-    static const int initSpeed = 128;
+    static const int Step = 96;
+    static const int initSpeed = 160;
 
     const int _pin1;
     const int _pin2;
@@ -69,16 +70,7 @@ class TB6612FNG::TBMotor : public Wheels::Motor
 
     void Report(String op)
     {
-      Serial.print("Engine ");
-      Serial.print(_name);
-      Serial.print(" going ");
-      Serial.print(op);
-      Serial.print(" -- ");
-      Serial.print(_val1);
-      Serial.print(':');
-      Serial.print(_val2);
-      Serial.print(" with speed ");
-      Serial.println(_speed);
+      Log("Engine ")(_name)(" going ")(op)(" -- ")(_val1)(':')(_val2)(" with speed ")(_speed);
     }
 
   public:
@@ -171,16 +163,25 @@ void TB6612FNG::begin()
   _mB->begin();
   pinMode(_pinSTDBY, OUTPUT);
   digitalWrite(_pinSTDBY, LOW);
+  _bEnabled = false;
 }
 
 void TB6612FNG::doStandby()
 {
-  digitalWrite(_pinSTDBY, LOW);
-  Serial.println("doStandby");
+  if ( _bEnabled )
+  {
+    digitalWrite(_pinSTDBY, LOW);
+    _bEnabled = false;
+  }
+  Log("doStandby");
 }
 
 void TB6612FNG::doEnable()
 {
-  digitalWrite(_pinSTDBY, HIGH);
-  Serial.println("doEnable");
+  if ( ! _bEnabled )
+  {
+    digitalWrite(_pinSTDBY, HIGH);
+    _bEnabled = true;
+  }
+  Log("doEnable");
 }
