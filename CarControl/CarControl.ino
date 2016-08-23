@@ -19,7 +19,7 @@ Outlook outlook(10, 11, MAX_DISTANCE);
 
   Bluetooth
   - Pin 12 ---> TX // purple
-  - Pin 2  ---> RX // orange
+  - Pin 2  ---> RX // brown
   // ground - blk
   // vcc - white, gray - ground
 */
