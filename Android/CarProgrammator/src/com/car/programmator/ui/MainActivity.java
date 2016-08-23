@@ -1,5 +1,7 @@
 package com.car.programmator.ui;
 
+import java.io.File;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import com.car.programmator.util.*;
 
@@ -10,7 +12,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.view.Gravity;
 import android.view.Menu;
@@ -23,18 +27,16 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
-	private BlueToothHelper		_bth			= null;
-	private UIHelper			_ui				= null;
-	private BroadcastReceiver	mReceiver		= null;
-
-	Handler						mHandler		= new Handler();
-	final long					mInterval		= 10000;
-	Thread						mCheckThread	= null;
+	final int					PICK_FILE_RESULT_CODE	= 11;
+	private BlueToothHelper		_bth					= null;
+	private UIHelper			_ui						= null;
+	private BroadcastReceiver	_mreceiver				= null;
+	Heartbeat					_hbeat					= new Heartbeat();
+	Handler						_handler				= new Handler();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -45,8 +47,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		_bth.registerCallBack(this);
 		_ui = new UIHelper(this);
 		_ui.registerCallBack(this);
-		// Create a BroadcastReceiver for ACTION_FOUND
-		mReceiver = new BroadcastReceiver()
+
+		_mreceiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
 		{
 			public void onReceive(Context context, Intent intent)
 			{
@@ -70,38 +72,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		};
 		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		registerReceiver(mReceiver, filter);
-
-		mCheckThread = new Thread(new Runnable()
-		{
-			@Override
-			public void run()
-			{
-				while (true)
-				{
-					try
-					{
-						Thread.sleep(10000);
-						mHandler.post(new Runnable()
-						{
-
-							@Override
-							public void run()
-							{
-								if (null != _bth)
-								{
-									_bth.isConnected();
-								}
-							}
-						});
-					}
-					catch (Exception e)
-					{
-					}
-				}
-			}
-		});
-
+		registerReceiver(_mreceiver, filter);
 	}// onCreate
 
 	@Override
@@ -122,7 +93,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	protected void onStop()
 	{
 		super.onStop();
-		mCheckThread.interrupt();
 	}
 
 	@Override
@@ -130,14 +100,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		super.onDestroy();
 		_bth.Finalize();
-		if (null != mReceiver)
+		if (null != _mreceiver)
 		{
-			unregisterReceiver(mReceiver);
+			unregisterReceiver(_mreceiver);
 		}
 	}
 
 	private void BTConnect()
 	{
+		_hbeat.Stop();
 		_bth.StartDiscovery();
 		_bth.checkBTState();
 		if (_bth.isReady())
@@ -152,8 +123,52 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		return true;
+		if (menu.getClass().getSimpleName().equals("MenuBuilder"))
+		{
+			try
+			{
+				Method m = menu.getClass().getDeclaredMethod(
+						"setOptionalIconsVisible", Boolean.TYPE);
+				m.setAccessible(true);
+				m.invoke(menu, true);
+			}
+			catch (NoSuchMethodException e)
+			{
+			}
+			catch (Exception e)
+			{
+				throw new RuntimeException(e);
+			}
+		}
+		return super.onCreateOptionsMenu(menu);
 	}
+
+//	@Override
+//	public boolean onMenuOpened(int featureId, Menu menu)
+//	{
+//		if (featureId == Window.FEATURE_ACTION_BAR && menu != null)
+//		{
+//			if (menu.getClass().getSimpleName().equals("MenuBuilder"))
+//			{
+//				try
+//				{
+//					Method m = menu.getClass().getDeclaredMethod(
+//							"setOptionalIconsVisible", Boolean.TYPE);
+//					m.setAccessible(true);
+//					m.invoke(menu, true);
+//				}
+//				catch (NoSuchMethodException e)
+//				{
+//
+//				}
+//				catch (Exception e)
+//				{
+//					throw new RuntimeException(e);
+//				}
+//			}
+//		}
+//		return super.onMenuOpened(featureId, menu);
+//	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
@@ -165,6 +180,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		if (id == R.id.action_settings)
 		{
 			BTConnect();
+		}
+		else if (id == R.id.action_load_file)
+		{
+			ChooseFileDialog dlg = new ChooseFileDialog();
+			dlg.loadFileList();
+			dlg.onCreateDialog(this, ChooseFileDialog.DIALOG_LOAD_FILE);
+		}
+		else if (id == R.id.action_save_file)
+		{
 		}
 		// else if (id == R.id.action_devices_list)
 		// {
@@ -207,7 +231,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void ResposeToUiThread(char c)
 	{
-		Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
+		// Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
+		if (!_ui.PerformMode())
+		{
+			if (c == 'H' || c == 'X')
+			{
+				_bth.isConnected();
+				return;
+			}
+		}
 		if (!_ui.IsPerformedValid())
 		{
 			return;
@@ -238,6 +270,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void onStartPerform()
 	{
+		_bth.isConnected();
 		StartPerform();
 	}
 
@@ -284,7 +317,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					if (null != tv)
 					{
 						String item = tv.getText().toString();
-						_bth.BTGetDevice(item);
+						_bth.ConnectToBTDevice(item);
 						dialog.dismiss();
 					}
 
@@ -309,6 +342,59 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
+	}
+
+	class Heartbeat
+	{
+
+		private boolean	bPause	= false;
+
+		Thread			mThread	= new Thread(new Runnable()
+								{
+
+									@Override
+									public void run()
+									{
+										while (true)
+										{
+											try
+											{
+												Thread.sleep(2000);
+												if (!bPause)
+												{
+													if (!_ui.PerformMode())
+													{
+														_bth.Send('h');
+													}
+												}
+											}
+											catch (InterruptedException e)
+											{
+											}
+										}
+									}
+								}, "Heartbeat");
+
+		public Heartbeat()
+		{
+			mThread.start();
+		}
+
+		void Start()
+		{
+			bPause = false;
+		}
+
+		void Stop()
+		{
+			bPause = true;
+		}
+	}// class Heartbeat
+
+	@Override
+	public void HeartbeatStart()
+	{
+		_hbeat.Start();
 	}
 
 }// class MainActivity
