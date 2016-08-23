@@ -19,7 +19,7 @@ Outlook outlook(10, 11, MAX_DISTANCE);
 
   Bluetooth
   - Pin 12 ---> TX // purple
-  - Pin 2  ---> RX // orange
+  - Pin 2  ---> RX // brown
   // ground - blk
   // vcc - white, gray - ground
 */
@@ -102,6 +102,69 @@ bool ProbeOutlook()
   return true;
 }
 
+struct ForwardTraits
+{
+  static bool WheelsMotion(Wheels& w) { return w.Forward(); }
+  static constexpr unsigned long ActionTime() { return RunningTime; }
+  static constexpr unsigned long WheelsStepTime() { return 10; }
+  static constexpr bool OutlookRequired() { return true; }
+  static constexpr const char* Name()  { return "Forward"; }
+};
+
+struct BackTraits
+{
+  static bool WheelsMotion(Wheels& w) { return w.Back(); }
+  static constexpr unsigned long ActionTime() { return RunningTime; }
+  static constexpr unsigned long WheelsStepTime() { return 15; }
+  static constexpr bool OutlookRequired() { return false; }
+  static constexpr const char* Name()  { return "Back"; }
+};
+
+struct LeftTraits
+{
+  static bool WheelsMotion(Wheels& w) { return w.Left(); }
+  static constexpr unsigned long ActionTime() { return RotationTime; }
+  static constexpr unsigned long WheelsStepTime() { return 2; }
+  static constexpr bool OutlookRequired() { return false; }
+  static constexpr const char* Name()  { return "Left"; }
+};
+
+struct RightTraits
+{
+  static bool WheelsMotion(Wheels& w) { return w.Right(); }
+  static constexpr unsigned long ActionTime() { return RotationTime; }
+  static constexpr unsigned long WheelsStepTime() { return 2; }
+  static constexpr bool OutlookRequired() { return false; }
+  static constexpr const char* Name()  { return "Right"; }
+};
+
+
+template <typename Traits>
+struct MoveOp
+{
+  void operator()(bool bSetActionConstrain)
+  {
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(Traits::ActionTime());
+    }
+
+    if (wheelsConstrain.check())
+    {
+      if (Traits::WheelsMotion(wheels))
+      {
+        ongoingOp = '\0';
+        Log("Accomplished ")(Traits::Name());
+      }
+      else
+      {
+        wheelsConstrain.set(Traits::WheelsStepTime());
+      }
+    }
+    bStopped  = false;
+  }
+};
+
 void loop()
 {
   if ( ! ProbeOutlook() )
@@ -143,86 +206,22 @@ void loop()
     {
       return;
     }
-    if (bSetActionConstrain)
-    {
-      actionConstrain.set(RunningTime);
-    }
-    if (wheelsConstrain.check())
-    {
-      if (wheels.Forward())
-      {
-        ongoingOp = '\0';
-        Log("Accomplished Forward");
-      }
-      else
-      {
-        wheelsConstrain.set(10);
-      }
-    }
-    bStopped  = false;
+    MoveOp<ForwardTraits>()(bSetActionConstrain);
     break;
 
   case 'b':
     bOutlookRequired = false;
-    if (bSetActionConstrain)
-    {
-      actionConstrain.set(RunningTime);
-    }
-    if (wheelsConstrain.check())
-    {
-      if (wheels.Back())
-      {
-        ongoingOp = '\0';
-        Log("Accomplished Back");
-      }
-      else
-      {
-        wheelsConstrain.set(15);
-      }
-    }
-    bStopped  = false;
+    MoveOp<BackTraits>()(bSetActionConstrain);
     break;
 
   case 'l':
     bOutlookRequired = false;
-    if (bSetActionConstrain)
-    {
-      actionConstrain.set(RotationTime);
-    }
-    if (wheelsConstrain.check())
-    {
-      if (wheels.Left())
-      {
-        ongoingOp = '\0';
-        Log("Accomplished Left");
-      }
-      else
-      {
-        wheelsConstrain.set(2);
-      }
-    }
-    bStopped  = false;
+    MoveOp<LeftTraits>()(bSetActionConstrain);
     break;
 
   case 'r':
     bOutlookRequired = false;
-    if (bSetActionConstrain)
-    {
-      actionConstrain.set(RotationTime);
-    }
-    if (wheelsConstrain.check())
-    {
-      if (wheels.Right())
-      {
-        Log("Accomplished Right");
-        ongoingOp = '\0';
-      }
-      else
-      {
-        wheelsConstrain.set(2);
-      }
-    }
-    bStopped  = false;
+    MoveOp<RightTraits>()(bSetActionConstrain);
     break;
     
   case 's':
