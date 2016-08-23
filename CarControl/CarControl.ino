@@ -81,7 +81,7 @@ bool bOutlookRequired = false;
 
 bool ProbeOutlook()
 {
-  if (bOutlookRequired && outlookConstrain.check() && ongoingOp == 'f')
+  if (bOutlookRequired && outlookConstrain.check())
   {
     if ( outlook.isInRange() )
     { 
@@ -95,7 +95,7 @@ bool ProbeOutlook()
     }
     else
     {
-      outlookConstrain.set(50);    
+      outlookConstrain.set(5);    
     }
   }
 
@@ -177,7 +177,7 @@ void loop()
       }
       else
       {
-        wheelsConstrain.set(10);
+        wheelsConstrain.set(15);
       }
     }
     bStopped  = false;
