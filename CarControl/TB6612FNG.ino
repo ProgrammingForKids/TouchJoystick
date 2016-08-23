@@ -1,140 +1,187 @@
 #include "TB6612FNG.h"
+#include "Log.h"
 
 class TB6612FNG::TBMotor : public Wheels::Motor
 {
-    const int pin1;
-    const int pin2;
-    const int pinPWM;
-    const String name;
+    static const int Step = 32;
+    static const int initSpeed = 160;
 
-    int speed;
-    int val1;
-    int val2;
+    const int _pin1;
+    const int _pin2;
+    const int _pinPWM;
+    const String _name;
 
-    int NextSpeed()
+    int _speed;
+    int _val1;
+    int _val2;
+
+    int SpeedStepUp()
     {
-      static const int Step = 32;
-      static const int initSpeed = 128;
-
-      if (speed == 255)
+      if (_speed == 255)
       {
         return 255;
       }
 
-      if (speed < initSpeed)
+      if (_speed < initSpeed)
       {
         return initSpeed;
       }
 
-      if (speed + Step > 255)
+      if (_speed + Step > 255)
+      {
         return 255;
-
-      return speed + Step;
+      }
+      
+      return _speed + Step;
     }
 
-    void Rotate(int p1, int p2)
+    int SpeedStepDown()
     {
-      if (p1 != val1 || p2 != val2)
+      if (_speed <= initSpeed)
       {
-        if (speed != 0)
+        return 0;
+      }      
+      else
+      {
+        return _speed - Step;
+      }
+    }
+
+    bool Rotate(int p1, int p2)
+    {
+      
+      if (p1 != _val1 || p2 != _val2)
+      {
+        if (_speed != 0)
         {
           Stop();
-          delay(10);
+          return false;
         }
       }
 
-      speed = NextSpeed();
-      val1 = p1;
-      val2 = p2;
-      analogWrite(pinPWM, speed);
-      digitalWrite(pin1, p1);
-      digitalWrite(pin2, p2);
+      _speed = SpeedStepUp();
+      _val1 = p1;
+      _val2 = p2;
+      analogWrite(_pinPWM, _speed);
+      digitalWrite(_pin1, p1);
+      digitalWrite(_pin2, p2);
+      return _speed == 255;
     }
 
     void Report(String op)
     {
-      Serial.print("Engine ");
-      Serial.print(name);
-      Serial.print(" going ");
-      Serial.print(op);
-      Serial.print(" -- ");
-      Serial.print(val1);
-      Serial.print(':');
-      Serial.print(val2);
-      Serial.print(" with speed ");
-      Serial.println(speed);
+      Log("Engine ")(_name)(" going ")(op)(" -- ")(_val1)(':')(_val2)(" with speed ")(_speed);
     }
 
   public:
     TBMotor(String n, int p1, int p2, int pPWM)
-      : pin1(p1)
-      , pin2(p2)
-      , pinPWM(pPWM)
-      , name(n)
+      : _pin1(p1)
+      , _pin2(p2)
+      , _pinPWM(pPWM)
+      , _name(n)
     {
-      speed = 0;
-      val1 = LOW;
-      val2 = LOW;
+      _speed = 0;
+      _val1 = LOW;
+      _val2 = LOW;
     }
 
     void begin()
     {
-      pinMode(pin1, OUTPUT);
-      pinMode(pin2, OUTPUT);
-      pinMode(pinPWM, OUTPUT);
+      pinMode(_pin1, OUTPUT);
+      pinMode(_pin2, OUTPUT);
+      pinMode(_pinPWM, OUTPUT);
     }
-    void GoClockwise()
+    
+    bool GoClockwise()
     {
-      Rotate(HIGH, LOW);
+      bool retval = Rotate(HIGH, LOW);
       Report("Clockwise");
+      return retval;
     }
-    void GoCounterclockwise()
+    
+    bool GoCounterclockwise()
     {
-      Rotate(LOW, HIGH);
+      bool retval = Rotate(LOW, HIGH);
       Report("Counterclockwise");
+      return retval;
     }
-    void Stop()
+    
+    bool Stop()
     {
-      digitalWrite(pin1, LOW);
-      digitalWrite(pin2, LOW);
-      speed = 0;
-      val1 = LOW;
-      val2 = LOW;
+      bool retval = true;
+      
+      if (_speed > 0)
+      {
+        _speed = SpeedStepDown();
+        if (_speed > 0)
+          analogWrite(_pinPWM, _speed);
+        retval = false;
+      }
+
+      if (_speed == 0)
+      {
+        if (_val1 != LOW)
+        {
+          digitalWrite(_pin1, LOW);
+          _val1 = LOW;
+          retval = false;
+        }
+        if (_val2 != LOW)
+        {
+          digitalWrite(_pin2, LOW);
+          _val2 = LOW;
+          retval = false;
+        }
+      }
       Report("Stop");
+      return retval;
     }
-    void Brake()
+
+    bool Brake()
     {
-      analogWrite(pinPWM, 0);
-      speed = 0;
-      val1 = LOW;
-      val2 = LOW;
+      analogWrite(_pinPWM, 0);
+      digitalWrite(_pin1, LOW);
+      digitalWrite(_pin2, LOW);
+      _speed = 0;
+      _val1 = LOW;
+      _val2 = LOW;
       Report("Brake");
+      return true;
     }
 };
 
 TB6612FNG::TB6612FNG(int pPWMA, int pINA2, int pINA1, int pSTDBY, int pINB1, int pINB2, int pPWMB)
 {
-  mA = new TBMotor("A", pINA1, pINA2, pPWMA);
-  mB = new TBMotor("B", pINB1, pINB2, pPWMB);
-  pinSTDBY = pSTDBY;
+  _mA = new TBMotor("A", pINA1, pINA2, pPWMA);
+  _mB = new TBMotor("B", pINB1, pINB2, pPWMB);
+  _pinSTDBY = pSTDBY;
 }
 
 void TB6612FNG::begin()
 {
-  mA->begin();
-  mB->begin();
-  pinMode(pinSTDBY, OUTPUT);
-  digitalWrite(pinSTDBY, LOW);
+  _mA->begin();
+  _mB->begin();
+  pinMode(_pinSTDBY, OUTPUT);
+  digitalWrite(_pinSTDBY, LOW);
+  _bEnabled = false;
 }
 
 void TB6612FNG::doStandby()
 {
-  digitalWrite(pinSTDBY, LOW);
-  Serial.println("doStandby");
+  if ( _bEnabled )
+  {
+    digitalWrite(_pinSTDBY, LOW);
+    _bEnabled = false;
+  }
+  Log("doStandby");
 }
 
 void TB6612FNG::doEnable()
 {
-  digitalWrite(pinSTDBY, HIGH);
-  Serial.println("doEnable");
+  if ( ! _bEnabled )
+  {
+    digitalWrite(_pinSTDBY, HIGH);
+    _bEnabled = true;
+  }
+  Log("doEnable");
 }

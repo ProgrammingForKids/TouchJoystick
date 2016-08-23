@@ -2,54 +2,63 @@
 
 Wheels::Wheels()
 {
-  mA = NULL;
-  mB = NULL;
+  _mA = NULL;
+  _mB = NULL;
 }
 
-void Wheels::Left()
+bool Wheels::Left()
 {
-  Serial.println("Wheels::Left");
+  Log("Wheels::Left");
   doEnable();
-  mA->GoCounterclockwise();
-  mB->GoClockwise();
+  bool bA = _mA->GoCounterclockwise();
+  bool bB = _mB->GoClockwise();
+  return bA && bB;
 }
 
-void Wheels::Right()
+bool Wheels::Right()
 {
-  Serial.println("Wheels::Right");
+  Log("Wheels::Right");
   doEnable();
-  mA->GoClockwise();
-  mB->GoCounterclockwise();
+  bool bA = _mA->GoClockwise();
+  bool bB = _mB->GoCounterclockwise();
+  return bA && bB;
 }
 
-void Wheels::Forward()
+bool Wheels::Forward()
 {
-  Serial.println("Wheels::Forward");
+  Log("Wheels::Forward");
   doEnable();
-  mA->GoClockwise();
-  mB->GoClockwise();
+  bool bA = _mA->GoClockwise();
+  bool bB = _mB->GoClockwise();
+  return bA && bB;
 }
 
-void Wheels::Back()
+bool Wheels::Back()
 {
-  Serial.println("Wheels::Back");
+  Log("Wheels::Back");
   doEnable();
-  mA->GoCounterclockwise();
-  mB->GoCounterclockwise();
+  bool bA = _mA->GoCounterclockwise();
+  bool bB = _mB->GoCounterclockwise();
+  return bA && bB;
 }
 
-void Wheels::Stop()
+bool Wheels::Stop()
 {
-  Serial.println("Wheels::Stop");
-  mA->Stop();
-  mB->Stop();
+  Log("Wheels::Stop");
+  bool bA = _mA->Stop();
+  bool bB = _mB->Stop();
+  if (bA && bB)
+  {
+    doStandby();
+  }
+  return bA && bB;
+}
+
+bool Wheels::Brake()
+{
+  Log("Wheels::Brake");
+  bool bA = _mA->Brake();
+  bool bB = _mB->Brake();
   doStandby();
-}
-
-void Wheels::Brake()
-{
-  Serial.println("Wheels::Brake");
-  mA->Stop();
-  mB->Stop();
-  doStandby();
+  return true;
 }

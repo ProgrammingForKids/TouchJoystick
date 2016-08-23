@@ -3,9 +3,9 @@ const unsigned long MAX_DISTANCE = 35;
 #include <SoftwareSerial.h>// import the serial library
 
 #include "TB6612FNG.h"
-
-
 #include "Outlook.h"
+#include "TimeConstrain.h"
+#include "Log.h"
 
 /*
  * Ultrasonic sensor
@@ -14,22 +14,6 @@ const unsigned long MAX_DISTANCE = 35;
 // blue - vcc
 */
 Outlook outlook(10, 11, MAX_DISTANCE);
-
-int pinLed = 13;
-
-
-#define USE_SERIAL_MONITOR
-
-void Delay(int ms)
-{
-#ifdef USE_SERIAL_MONITOR
-  Serial.print("Delay ");
-  Serial.print(ms);
-  Serial.println(" ms");
-#endif
-  delay(ms);
-}
-
 
 /*
 
@@ -54,15 +38,24 @@ SoftwareSerial BT(12, 2);
 */
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
-unsigned long ready_to_read_time;
+int pinLed = 13;
+
+
+TimeConstrain wheelsConstrain;
+TimeConstrain actionConstrain;
+TimeConstrain outlookConstrain;
+
+#define USE_SERIAL_MONITOR
+
+
+bool bStopped;
+char ongoingOp;
 
 void setup()
 {
   wheels.begin();
 
-#ifdef USE_SERIAL_MONITOR
-  Serial.begin(9600);
-#endif
+  Log::begin();
 
   //configure pin modes
   pinMode(pinLed, OUTPUT);
@@ -71,114 +64,198 @@ void setup()
 
   outlook.begin();
   BT.begin(38400);
-  BT.println("Bluetooth is Ready");
 
-  Serial.println("Ready");
-  ready_to_read_time = millis();
+  Log("Ready");
+  bStopped = true;
+  ongoingOp = '\0';
+
+  wheelsConstrain.set(0);
+  actionConstrain.set(0);
+  outlookConstrain.set(0);
 }
 
+static const unsigned long RunningTime = 500;
+static const unsigned long RotationTime = 150;
 
+bool bOutlookRequired = false;
 
-bool obstacle = false;
-char  recent_state = 's'; // Stopped
+bool ProbeOutlook()
+{
+  if (bOutlookRequired && outlookConstrain.check())
+  {
+    if ( outlook.isInRange() )
+    { 
+      wheels.Brake();
+      bStopped = true;
+      bOutlookRequired = false;
+      BT.print('O');
+      Log("Obstacle");
+      ongoingOp = '\0';
+      return false;
+    }
+    else
+    {
+      outlookConstrain.set(5);    
+    }
+  }
 
+  return true;
+}
 
 void loop()
 {
-  bool isClose = outlook.isInRange();
-
-  if ( (!obstacle) && isClose )
+  if ( ! ProbeOutlook() )
   {
-    digitalWrite(pinLed, HIGH);
-    BT.println("Obstacle! Emergency stop");
-    obstacle = true;
-
-    wheels.Brake();
+    Log("Stopping before obstacle");
+    return;
   }
 
-
-  if ( (!isClose) && obstacle)
+  char reply = '\0';
+  bool bSetActionConstrain = false;
+  
+  if ( ongoingOp == '\0' && actionConstrain.check() )
   {
-    digitalWrite(pinLed, LOW);
-    BT.println("Obstacle removed");
-    obstacle = false;
+    if (BT.available())
+    {
+      bSetActionConstrain = true;
+      ongoingOp = BT.read();
+      reply = ongoingOp + 'A' - 'a';
+      Log("Fetched command ")(ongoingOp);
+    }
+    else if (! bStopped)
+    {
+      Log("No command received, stopping");
+      ongoingOp = 's';
+      reply = 'S';
+    }
   }
 
-  int BluetoothData = 's';
-
-  if (BT.available())
+  switch (ongoingOp)
   {
-    BluetoothData = BT.read();
-    Serial.print("Received ");
-    Serial.println((char)BluetoothData);
-  }
+  case 'h':
+    actionConstrain.set(0);
+    ongoingOp = '\0';
+    break;
 
-  char report = '\0';
-
-  if (recent_state != BluetoothData)
-  {
-    wheels.Stop();
-    report = 'S';
-    delay(100);
-  }
-
-  recent_state = BluetoothData;
-
-  int aftermath = 30;
-
-  switch (BluetoothData)
-  {
-    case 'f':
-      if (obstacle)
+  case 'f':
+    bOutlookRequired = true;
+    if ( ! ProbeOutlook() )
+    {
+      return;
+    }
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RunningTime);
+    }
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Forward())
       {
-        BT.println("Cant go forward, obstacle");
-        wheels.Brake();
-        recent_state = 's';
+        ongoingOp = '\0';
+        Log("Accomplished Forward");
       }
       else
       {
-        wheels.Forward();
-        recent_state = 'f';
-        report = 'F';
-        aftermath = 100;
+        wheelsConstrain.set(10);
       }
-      break;
+    }
+    bStopped  = false;
+    break;
 
-    case 'b':
-      wheels.Back();
-      recent_state = 'b';
-      report = 'B';
-      aftermath = 100;
-      break;
+  case 'b':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RunningTime);
+    }
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Back())
+      {
+        ongoingOp = '\0';
+        Log("Accomplished Back");
+      }
+      else
+      {
+        wheelsConstrain.set(15);
+      }
+    }
+    bStopped  = false;
+    break;
 
-    case 'l':
-      wheels.Left();
-      recent_state = 'l';
-      report = 'L';
-      aftermath = 100;
-      break;
+  case 'l':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RotationTime);
+    }
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Left())
+      {
+        ongoingOp = '\0';
+        Log("Accomplished Left");
+      }
+      else
+      {
+        wheelsConstrain.set(2);
+      }
+    }
+    bStopped  = false;
+    break;
 
-    case 'r':
-      wheels.Right();
-      recent_state = 'r';
-      report = 'R';
-      aftermath = 100;
-      break;
+  case 'r':
+    bOutlookRequired = false;
+    if (bSetActionConstrain)
+    {
+      actionConstrain.set(RotationTime);
+    }
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Right())
+      {
+        Log("Accomplished Right");
+        ongoingOp = '\0';
+      }
+      else
+      {
+        wheelsConstrain.set(2);
+      }
+    }
+    bStopped  = false;
+    break;
+    
+  case 's':
+    if (wheelsConstrain.check())
+    {
+      if (wheels.Stop())
+      {
+        ongoingOp = '\0';
+        bStopped  = true;
+        bOutlookRequired = false;
+        Log("Accomplished Stop");
+      }
+      else
+      {
+        wheelsConstrain.set(5);
+      }
+    }
+    break;
 
-    case 's':
-      break;
+  case '\0':
+    break;
 
-    default:
-      Serial.println("Unknown command");
-      report = 'X';
-      break;
-  }
+  default:
+    reply = 'X';
+    ongoingOp = '\0';
+    actionConstrain.set(0);
+    break;
+  }  
 
-  if (report != '\0')
+  if (reply != '\0')
   {
-    BT.print(report);
+    BT.print(reply);
   }
 
-  delay(aftermath);// prepare for next data ...
 }
 
