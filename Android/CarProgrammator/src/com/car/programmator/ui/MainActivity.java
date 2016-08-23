@@ -127,8 +127,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			try
 			{
-				Method m = menu.getClass().getDeclaredMethod(
-						"setOptionalIconsVisible", Boolean.TYPE);
+				Method m = menu.getClass().getDeclaredMethod("setOptionalIconsVisible", Boolean.TYPE);
 				m.setAccessible(true);
 				m.invoke(menu, true);
 			}
@@ -142,33 +141,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		}
 		return super.onCreateOptionsMenu(menu);
 	}
-
-//	@Override
-//	public boolean onMenuOpened(int featureId, Menu menu)
-//	{
-//		if (featureId == Window.FEATURE_ACTION_BAR && menu != null)
-//		{
-//			if (menu.getClass().getSimpleName().equals("MenuBuilder"))
-//			{
-//				try
-//				{
-//					Method m = menu.getClass().getDeclaredMethod(
-//							"setOptionalIconsVisible", Boolean.TYPE);
-//					m.setAccessible(true);
-//					m.invoke(menu, true);
-//				}
-//				catch (NoSuchMethodException e)
-//				{
-//
-//				}
-//				catch (Exception e)
-//				{
-//					throw new RuntimeException(e);
-//				}
-//			}
-//		}
-//		return super.onMenuOpened(featureId, menu);
-//	}
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item)
