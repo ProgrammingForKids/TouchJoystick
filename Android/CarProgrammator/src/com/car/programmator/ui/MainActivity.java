@@ -1,6 +1,5 @@
 package com.car.programmator.ui;
 
-import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import com.car.programmator.util.*;
@@ -12,9 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.view.Gravity;
 import android.view.Menu;
@@ -155,12 +152,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		}
 		else if (id == R.id.action_load_file)
 		{
-			ChooseFileDialog dlg = new ChooseFileDialog();
-			dlg.loadFileList();
-			dlg.onCreateDialog(this, ChooseFileDialog.DIALOG_LOAD_FILE);
+			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_LOAD_FILE);
+			dlg.ShowDialog(this, _ui);
 		}
 		else if (id == R.id.action_save_file)
 		{
+			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_SAVE_FILE);
+			dlg.ShowDialog(this, _ui);
+			
 		}
 		// else if (id == R.id.action_devices_list)
 		// {

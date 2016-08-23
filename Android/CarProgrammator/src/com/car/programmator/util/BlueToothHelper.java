@@ -237,6 +237,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	{
 		if (null != _BluetoothConnectedThread)
 		{
+			Logger.Log.t("SEND GET",c);
 			_BluetoothConnectedThread.Send(c);
 		}
 		else

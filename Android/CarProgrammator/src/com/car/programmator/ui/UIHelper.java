@@ -287,4 +287,51 @@ public class UIHelper
 		return _imgselected.IsSelected();
 	}
 
+	public String CommandString()
+	{
+		String ret = "";
+		int count = _command_aria.getChildCount();
+		for (int k = 0; k < count; ++k)
+		{
+			View v = _command_aria.getChildAt(k);
+			char c = OpCode.OpcodeC(v.getId());
+			ret += c;
+		}
+		return ret;
+	}
+
+	public void SetCommand(String commands)
+	{
+		_command_aria.removeAllViews();
+		int length = commands.length();
+		for (int k = 0; k < length; ++k)
+		{
+			char c = commands.charAt(k);
+			int id = 0; 
+			switch (c)
+			{
+				case 'f':
+					id = OpCode._FORWARD;
+					break;
+				case 'b':
+					id = OpCode._BACK;
+					break;
+				case 'l':
+					id = OpCode._LEFT;
+					break;
+				case 'r':
+					id = OpCode._RIGHT;
+					break;
+					default:
+						return;
+			}
+			
+			ImageView iv = ImageHelper.CreateImage(activity, id);
+			iv.setOnClickListener(_OnClickSelectInsert);
+			iv.setOnLongClickListener(myOnLongClickListener);
+			_command_aria.addView(iv);
+
+		}
+	}
+
 }// class UIHelper
