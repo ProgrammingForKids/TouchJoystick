@@ -12,8 +12,9 @@ const unsigned long MAX_DISTANCE = 35;
   - Pin 10 ---> echo // yellow
   - Pin 11 ---> trig // green
 // blue - vcc
+  - Pin 13 ---> optional signal led
 */
-Outlook outlook(10, 11, MAX_DISTANCE);
+Outlook outlook(10, 11, MAX_DISTANCE, 13);
 
 /*
 
@@ -38,8 +39,6 @@ SoftwareSerial BT(12, 2);
 */
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
-int pinLed = 13;
-
 
 TimeConstrain wheelsConstrain;
 TimeConstrain actionConstrain;
@@ -56,11 +55,6 @@ void setup()
   wheels.begin();
 
   Log::begin();
-
-  //configure pin modes
-  pinMode(pinLed, OUTPUT);
-  digitalWrite(pinLed, LOW);
-
 
   outlook.begin();
   BT.begin(38400);
@@ -95,7 +89,7 @@ bool ProbeOutlook()
     }
     else
     {
-      outlookConstrain.set(5);    
+      outlookConstrain.set(20);    
     }
   }
 
