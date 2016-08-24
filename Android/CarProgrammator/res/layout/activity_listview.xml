@@ -3,6 +3,7 @@
     android:id="@+id/label"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
+    android:background="@color/gray"
     android:padding="10dip"
     android:textStyle="bold" >
 

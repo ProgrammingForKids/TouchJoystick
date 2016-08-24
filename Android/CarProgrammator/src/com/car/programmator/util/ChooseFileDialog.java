@@ -42,12 +42,14 @@ public class ChooseFileDialog
 		dialog.setContentView(R.layout.choosefile_layout);
 		{
 			GridView gridview = (GridView) dialog.findViewById(R.id.gridview);
-			gridview.setAdapter(new ImageAdapter(context));
+			final ImageAdapter ia = new ImageAdapter(context);
+			gridview.setAdapter(ia);
 			gridview.setOnItemClickListener(new OnItemClickListener()
 			{
 				public void onItemClick(AdapterView<?> parent, View v, int position, long id)
 				{
-					String fileName = Integer.toString(v.getId());
+					String fileName = Integer.toString(v.getId()) + FTYPE;
+					File file = new File(_Path, fileName);
 					if (DIALOG_LOAD_FILE == _mode)
 					{
 						if (((ImageView) v).getAlpha() < 1)
@@ -55,7 +57,32 @@ public class ChooseFileDialog
 							return;
 						}
 					}
-					Invoke(fileName, _ui);
+					boolean b = false;
+
+					switch (_mode)
+					{
+						case DIALOG_LOAD_FILE:
+							String comm = Load(file);
+							if (null != comm)
+							{
+								_ui.SetCommand(comm);
+								b = true;
+							}
+							break;
+						case DIALOG_SAVE_FILE:
+							String data = _ui.CommandString();
+							_ui.SaveCommandString(data);
+							b = Save(file, data);
+							break;
+						default:
+							break;
+					}
+					if (b)
+					{
+						int iconId = ia.GetChoosed(position);
+						_ui.SetFileIcon(iconId);
+						_ui.ShowFileIcon();
+					}
 
 					dialog.dismiss();
 
@@ -63,6 +90,7 @@ public class ChooseFileDialog
 			});
 		}
 		dialog.show();
+
 		// Size & Position
 		Window window = dialog.getWindow();
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -70,58 +98,41 @@ public class ChooseFileDialog
 
 	}
 
-	void Invoke(final String fileName, UIHelper _ui)
+	boolean Save(File file, String data)
 	{
-		switch (_mode)
-		{
-			case DIALOG_LOAD_FILE:
-				Load(fileName, _ui);
-				break;
-			case DIALOG_SAVE_FILE:
-				Save(fileName, _ui);
-				break;
-			default:
-				break;
-		}
-
-	}
-
-	void Save(final String file, UIHelper _ui)
-	{
-		File f = new File(_Path, file + FTYPE);
 		FileOutputStream outputStream;
 		try
 		{
-			String data = _ui.CommandString();
-			outputStream = new FileOutputStream(f);
+			outputStream = new FileOutputStream(file);
 			outputStream.write(data.getBytes());
 			outputStream.close();
+			return true;
 		}
 		catch (IOException e)
 		{
 		}
+		return false;
 	}
 
-	void Load(final String file, UIHelper _ui)
+	String Load(File file)
 	{
-		File f = new File(_Path, file + FTYPE);
 		StringBuilder text = new StringBuilder();
 		try
 		{
-			BufferedReader br = new BufferedReader(new FileReader(f));
+			BufferedReader br = new BufferedReader(new FileReader(file));
 			String line;
 
 			while ((line = br.readLine()) != null)
 			{
 				text.append(line);
-				text.append('\n');
 			}
 			br.close();
-			_ui.SetCommand(text.toString());
+			return text.toString();
 		}
 		catch (IOException e)
 		{
 		}
+		return null;
 	}
 
 }// class ChooseFileDialog

@@ -88,6 +88,11 @@ public class ImageAdapter extends BaseAdapter
 			R.drawable.f11, R.drawable.f12
 	};
 
+	int GetChoosed(int position)
+	{
+		return mThumbIds[position];
+	}
+	
 	void GetFiles()
 	{
 		if (_Path.exists())

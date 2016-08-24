@@ -12,6 +12,19 @@ public class Eraser
 	private final FlowLayout	_command_aria;
 	private final ImageSelected	_selected_image;
 
+	public interface Callback
+	{
+		void onErase();
+	}
+
+	private Callback mCallback;
+
+	public void registerCallBack(Callback callback)
+	{
+		mCallback = callback;
+	}
+
+	
 	public Eraser(Activity activity, final ImageSelected selectedImage)
 	{
 		_selected_image = selectedImage;
@@ -38,6 +51,7 @@ public class Eraser
 				{
 					_command_aria.removeViewAt(index - 1);
 				}
+				mCallback.onErase();
 			}
 		});
 		_eraser.setOnLongClickListener(new OnLongClickListener()
@@ -47,6 +61,7 @@ public class Eraser
 			public boolean onLongClick(View v)
 			{
 				_command_aria.removeAllViews();
+				mCallback.onErase();
 				return false;
 			}
 		});

@@ -120,6 +120,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
+		_ui.SetMenuItem(menu.findItem(R.id.action_current));
+		
 		if (menu.getClass().getSimpleName().equals("MenuBuilder"))
 		{
 			try

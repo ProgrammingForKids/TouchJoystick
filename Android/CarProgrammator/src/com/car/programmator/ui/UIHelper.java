@@ -7,6 +7,7 @@ import android.content.ClipData;
 import android.support.v4.content.ContextCompat;
 import android.text.method.ScrollingMovementMethod;
 import android.view.DragEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.DragShadowBuilder;
 import android.view.View.OnClickListener;
@@ -16,7 +17,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-public class UIHelper
+public class UIHelper implements Eraser.Callback
 {
 	private final int	SB_START		= 10;
 	private final int	SB_STOP			= 11;
@@ -60,6 +61,7 @@ public class UIHelper
 		this.activity = activity;
 		_imgselected = new ImageSelected(activity);
 		_eraser = new Eraser(activity, _imgselected);
+		_eraser.registerCallBack(this);
 		_area_tools = (LinearLayout) activity.findViewById(R.id.area_tools);
 		_startBnt = (ImageView) activity.findViewById(R.id.image_tools);
 		_startBnt.setId(SB_START);
@@ -125,6 +127,7 @@ public class UIHelper
 																{
 																	_command_aria.removeView(_imgselected.InsertView());
 																	_imgselected.Unselect();
+																	IsCommandStringChanged();
 																	return;
 																}
 																int count = _command_aria.getChildCount();
@@ -135,6 +138,7 @@ public class UIHelper
 																	{
 																		_imgselected.Set(v, index);
 																		_command_aria.addView(_imgselected.InsertView(), index);
+																		IsCommandStringChanged();
 																		break;
 																	}
 																}
@@ -165,6 +169,7 @@ public class UIHelper
 																{
 																	_command_aria.addView(iv);
 																}
+																IsCommandStringChanged();
 															}
 														};
 
@@ -207,6 +212,7 @@ public class UIHelper
 																		{
 																			View view = (View) event.getLocalState();
 																			_command_aria.removeView(view);
+																			IsCommandStringChanged();
 																		}
 																		break;
 																	default:
@@ -216,6 +222,9 @@ public class UIHelper
 															}
 
 														};
+	private MenuItem	ShowFileMenuItem;
+	private String		_commandString;
+	private int			_FileIconId;
 
 	char OpcodeToDo()
 	{
@@ -300,14 +309,36 @@ public class UIHelper
 		return ret;
 	}
 
+	boolean IsCommandStringChanged()
+	{
+		String t = CommandString();
+		boolean ret = t.equals(_commandString);
+		if (!ret)
+		{
+			ShowFileMenuItem.setIcon(R.drawable.noload);
+		}
+		else
+		{
+			ShowFileMenuItem.setIcon(_FileIconId);
+		}
+
+		return ret;
+	}
+
+	public void SaveCommandString(String string)
+	{
+		_commandString = string;
+	}
+
 	public void SetCommand(String commands)
 	{
+		SaveCommandString(commands);
 		_command_aria.removeAllViews();
 		int length = commands.length();
 		for (int k = 0; k < length; ++k)
 		{
 			char c = commands.charAt(k);
-			int id = 0; 
+			int id = 0;
 			switch (c)
 			{
 				case 'f':
@@ -322,16 +353,41 @@ public class UIHelper
 				case 'r':
 					id = OpCode._RIGHT;
 					break;
-					default:
-						return;
+				default:
+					return;
 			}
-			
+
 			ImageView iv = ImageHelper.CreateImage(activity, id);
 			iv.setOnClickListener(_OnClickSelectInsert);
 			iv.setOnLongClickListener(myOnLongClickListener);
 			_command_aria.addView(iv);
 
 		}
+	}
+
+	public void SetFileIcon(int iconId)
+	{
+		_FileIconId = iconId;
+	}
+
+	public void ShowFileIcon()
+	{
+		if (null != ShowFileMenuItem)
+		{
+			ShowFileMenuItem.setIcon(_FileIconId);
+		}
+
+	}
+
+	public void SetMenuItem(MenuItem findItem)
+	{
+		ShowFileMenuItem = findItem;
+	}
+
+	@Override
+	public void onErase()
+	{
+		IsCommandStringChanged();
 	}
 
 }// class UIHelper

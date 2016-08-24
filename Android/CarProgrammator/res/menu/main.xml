@@ -2,6 +2,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.car.programmator.ui.MainActivity" >
 
+       <item
+        android:id="@+id/action_current"
+        android:icon="@drawable/noload"
+        android:orderInCategory="100"
+        android:showAsAction="ifRoom"
+        android:title="@null"/>
+    
     <item
         android:id="@+id/action_load_file"
         android:icon="@drawable/filechoose"
@@ -29,13 +36,6 @@
          android:icon="@drawable/settings"
         android:title="@string/action_settings"/>
 
-    <!--
-          item
-        android:id="@+id/action_start"
-        android:icon="@drawable/start"
-        android:orderInCategory="100"
-        android:showAsAction="ifRoom"
-        android:title="@string/action_start"/
-    -->
+ 
 
 </menu>
