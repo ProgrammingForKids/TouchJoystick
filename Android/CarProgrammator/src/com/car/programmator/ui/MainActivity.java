@@ -6,6 +6,7 @@ import com.car.programmator.util.*;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -28,12 +29,13 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
-	final int					PICK_FILE_RESULT_CODE	= 11;
 	private BlueToothHelper		_bth					= null;
 	private UIHelper			_ui						= null;
 	private BroadcastReceiver	_mreceiver				= null;
 	Heartbeat					_hbeat					= new Heartbeat();
 	Handler						_handler				= new Handler();
+	private boolean				_is_discovery_finished	= false;
+	private MenuItem			_menuitem_devicelist;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -49,15 +51,18 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			public void onReceive(Context context, Intent intent)
 			{
-				if (null == _bth)
-				{
-					return;
-				}
 				String action = intent.getAction();
+				Logger.Log.t("BroadcastReceiver", action);
 				// When discovery finds a device
 				if (BluetoothDevice.ACTION_FOUND.equals(action))
 				{
 					// Get the BluetoothDevice object from the Intent
+					_menuitem_devicelist.setEnabled(false);
+					if (_is_discovery_finished)
+					{
+						_is_discovery_finished = false;
+						_bth.FoundDeviceList().clear();
+					}
 					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 					if (null != device)
 					{
@@ -65,10 +70,26 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 						_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
 					}
 				}
+				if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
+				{
+					int size = _bth.FoundDeviceList().size();
+					Logger.Log.t("BroadcastReceiver", "List", size);
+					_is_discovery_finished = true;
+					if (1 > size)
+					{
+						_bth.FoundDeviceList().add("Found Device List is empty");
+					}
+					if (null != _menuitem_devicelist)
+					{
+						_menuitem_devicelist.setEnabled(true);
+					}
+				}
 			}
 		};
-		// Register the BroadcastReceiver
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+		this.registerReceiver(_mreceiver, filter);
+		// Register for broadcasts when discovery has finished
+		filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		registerReceiver(_mreceiver, filter);
 	}// onCreate
 
@@ -78,12 +99,16 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		super.onResume();
 		if (null != _bth)
 		{
+			_bth.startScanDevice();
 			if (!_bth.isConnected())
 			{
 				_bth.StartDiscovery();
+				if (null != _menuitem_devicelist)
+				{
+					_menuitem_devicelist.setEnabled(false);
+				}
 			}
 		}
-		// mCheckThread.start();
 	}
 
 	@Override
@@ -121,7 +146,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		_ui.SetMenuItem(menu.findItem(R.id.action_current));
-		
+		_menuitem_devicelist = menu.findItem(R.id.action_devices_list);
+		if (null != _menuitem_devicelist)
+		{
+			_menuitem_devicelist.setEnabled(false);
+		}
 		if (menu.getClass().getSimpleName().equals("MenuBuilder"))
 		{
 			try
@@ -161,12 +190,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_SAVE_FILE);
 			dlg.ShowDialog(this, _ui);
-			
+
 		}
-		// else if (id == R.id.action_devices_list)
-		// {
-		// // ShowDevices(_bth.FoundDeviceList());
-		// }
+		else if (id == R.id.action_devices_list)
+		{
+			ShowDevices(_bth.FoundDeviceList());
+		}
 
 		return super.onOptionsItemSelected(item);
 	}
@@ -277,7 +306,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		dialog.setContentView(R.layout.popup_window);
 		{
 			ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, R.layout.activity_listview, list);
-
 			ListView listView = (ListView) dialog.findViewById(R.id.listView1);
 			listView.setAdapter(adapter);
 			listView.setOnItemClickListener(new OnItemClickListener()
@@ -320,7 +348,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	class Heartbeat
 	{
 
-		private boolean	bPause	= false;
+		private boolean	bPause	= true;
 
 		Thread			mThread	= new Thread(new Runnable()
 								{
@@ -365,9 +393,16 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	}// class Heartbeat
 
 	@Override
-	public void HeartbeatStart()
+	public void HeartbeatStart(boolean b)
 	{
-		_hbeat.Start();
+		if (b)
+		{
+			_hbeat.Start();
+		}
+		else
+		{
+			_hbeat.Stop();
+		}
 	}
 
 }// class MainActivity

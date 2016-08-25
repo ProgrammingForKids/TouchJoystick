@@ -4,5 +4,6 @@
     <color name="skyBlue">#87CEEB</color>
     <color name="gray">#CECECE</color>
     <color name="black">#000000</color>
+    <color name="red">#FF0000</color>
     
 </resources>

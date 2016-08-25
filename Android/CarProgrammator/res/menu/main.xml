@@ -2,13 +2,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.car.programmator.ui.MainActivity" >
 
-       <item
+    <item
         android:id="@+id/action_current"
         android:icon="@drawable/noload"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@null"/>
-    
     <item
         android:id="@+id/action_load_file"
         android:icon="@drawable/filechoose"
@@ -21,21 +20,17 @@
         android:orderInCategory="100"
         android:showAsAction="never"
         android:title="@string/action_save_file"/>
-
-    <!--
-   <item
+    <item
         android:id="@+id/action_devices_list"
+        android:icon="@drawable/btlist"
         android:orderInCategory="100"
         android:showAsAction="never"
-        android:title="@string/action_devices_list"/>
-    -->
+        android:title="@string/action_devices_list"/>
     <item
         android:id="@+id/action_settings"
+        android:icon="@drawable/settings"
         android:orderInCategory="100"
         android:showAsAction="never"
-         android:icon="@drawable/settings"
         android:title="@string/action_settings"/>
-
- 
 
 </menu>

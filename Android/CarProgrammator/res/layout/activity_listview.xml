@@ -5,6 +5,8 @@
     android:layout_height="fill_parent"
     android:background="@color/gray"
     android:padding="10dip"
+    android:text="@string/empty"
+    android:textColor="@color/black"
     android:textStyle="bold" >
 
 </TextView>

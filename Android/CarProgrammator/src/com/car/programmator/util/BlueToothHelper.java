@@ -2,6 +2,7 @@ package com.car.programmator.util;
 
 import java.util.ArrayList;
 import java.util.Set;
+
 import com.car.programmator.ui.R;
 
 import android.app.Activity;
@@ -34,10 +35,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 		void BTRespose(char c);
 
-		void HeartbeatStart();
+		void HeartbeatStart(boolean ret);
 	}
 
-	private Callback mCallback;
+	private Callback			mCallback;
 
 	public void registerCallBack(Callback callback)
 	{
@@ -68,13 +69,43 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		String title = _device_name;
 		this._activity.getActionBar().setTitle(title);
 		int resId = (ret) ? R.drawable.green : R.drawable.red;
+		mCallback.HeartbeatStart(ret);
 		this._activity.getActionBar().setIcon(resId);
 		return ret;
 	}
 
+	public void startScanDevice()
+	{
+//		// if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+//		{
+//			mScanCallback = new ScanCallback()
+//			{
+//				@Override
+//				public void onScanResult(int callbackType, ScanResult result)
+//				{
+//					super.onScanResult(callbackType, result);
+//					Logger.Log.t("SCANNER", result.getDevice());
+//				}
+//			};
+//
+//			final BluetoothManager bluetoothManager = (BluetoothManager) _activity.getSystemService(Context.BLUETOOTH_SERVICE);
+//			mBluetoothAdapter = bluetoothManager.getAdapter();
+//			BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+//			bluetoothLeScanner.startScan(mScanCallback);
+//		}
+//		// else
+//		// {
+//		// bluetoothAdapter.startLeScan(leScanCallback);
+//		// }
+	}
+
 	public void StartDiscovery()
 	{
-		_bluetoothAdapter.startDiscovery();
+		if (null != _bluetoothAdapter)
+		{
+			Logger.Log.t("BroadcastReceiver", "StartDiscovery");
+			_bluetoothAdapter.startDiscovery();
+		}
 	}
 
 	public void Finalize()
@@ -214,7 +245,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 					public void run()
 					{
 						isConnected();
-						mCallback.HeartbeatStart();
 					}
 				},
 				2000);
@@ -237,7 +267,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	{
 		if (null != _BluetoothConnectedThread)
 		{
-			Logger.Log.t("SEND GET",c);
+			Logger.Log.t("SEND GET", c);
 			_BluetoothConnectedThread.Send(c);
 		}
 		else
