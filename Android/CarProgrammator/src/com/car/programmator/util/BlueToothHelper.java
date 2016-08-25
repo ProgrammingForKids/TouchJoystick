@@ -38,7 +38,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		void HeartbeatStart(boolean ret);
 	}
 
-	private Callback			mCallback;
+	private Callback mCallback;
 
 	public void registerCallBack(Callback callback)
 	{
@@ -76,33 +76,39 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public void startScanDevice()
 	{
-//		// if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
-//		{
-//			mScanCallback = new ScanCallback()
-//			{
-//				@Override
-//				public void onScanResult(int callbackType, ScanResult result)
-//				{
-//					super.onScanResult(callbackType, result);
-//					Logger.Log.t("SCANNER", result.getDevice());
-//				}
-//			};
-//
-//			final BluetoothManager bluetoothManager = (BluetoothManager) _activity.getSystemService(Context.BLUETOOTH_SERVICE);
-//			mBluetoothAdapter = bluetoothManager.getAdapter();
-//			BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-//			bluetoothLeScanner.startScan(mScanCallback);
-//		}
-//		// else
-//		// {
-//		// bluetoothAdapter.startLeScan(leScanCallback);
-//		// }
+		// // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
+		// {
+		// mScanCallback = new ScanCallback()
+		// {
+		// @Override
+		// public void onScanResult(int callbackType, ScanResult result)
+		// {
+		// super.onScanResult(callbackType, result);
+		// Logger.Log.t("SCANNER", result.getDevice());
+		// }
+		// };
+		//
+		// final BluetoothManager bluetoothManager = (BluetoothManager)
+		// _activity.getSystemService(Context.BLUETOOTH_SERVICE);
+		// mBluetoothAdapter = bluetoothManager.getAdapter();
+		// BluetoothLeScanner bluetoothLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
+		// bluetoothLeScanner.startScan(mScanCallback);
+		// }
+		// // else
+		// // {
+		// // bluetoothAdapter.startLeScan(leScanCallback);
+		// // }
 	}
 
 	public void StartDiscovery()
 	{
 		if (null != _bluetoothAdapter)
 		{
+			// If we're already discovering, stop it
+			if (_bluetoothAdapter.isDiscovering())
+			{
+				_bluetoothAdapter.cancelDiscovery();
+			}
 			Logger.Log.t("BroadcastReceiver", "StartDiscovery");
 			_bluetoothAdapter.startDiscovery();
 		}
