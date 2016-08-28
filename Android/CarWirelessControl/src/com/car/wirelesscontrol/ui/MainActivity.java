@@ -250,6 +250,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			StopPerform();
 		}
+		else if(STOP_OBSTACLE == c)
+		{
+			StopPerform();
+			_ui.PerformObstacle();
+		}
 		else if (SOCKET_CLOSED == c || CONNECT_ERROR == c)
 		{
 			StopPerform();

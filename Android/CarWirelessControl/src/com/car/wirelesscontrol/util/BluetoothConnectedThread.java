@@ -26,7 +26,8 @@ public class BluetoothConnectedThread extends Thread
 		final char	CONNECT_ERROR		= 'Y';
 		final char	SOCKET_CLOSED		= 'Z';
 		final char	STOP_PERFORMANCE	= 'S';
-		
+		final char	STOP_OBSTACLE		= 'O';
+
 		void BluetoothRespose(char c);
 	}
 

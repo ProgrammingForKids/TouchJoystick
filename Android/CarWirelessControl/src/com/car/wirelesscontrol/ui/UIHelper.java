@@ -277,6 +277,13 @@ public class UIHelper implements Eraser.Callback
 			_performed.SetImage(this.activity, R.drawable.x);
 		}
 	}
+	public void PerformObstacle()
+	{
+		if (IsPerformedValid())
+		{
+			_performed.SetImage(this.activity,R.drawable.o);
+		}
+	}
 
 	public void StartBntToStop()
 	{
@@ -388,5 +395,6 @@ public class UIHelper implements Eraser.Callback
 	{
 		IsCommandStringChanged();
 	}
+
 
 }// class UIHelper

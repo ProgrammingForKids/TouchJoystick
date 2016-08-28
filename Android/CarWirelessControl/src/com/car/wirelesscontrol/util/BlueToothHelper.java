@@ -32,6 +32,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		final char	CONNECT_ERROR		= BluetoothConnectedThread.Callback.CONNECT_ERROR;
 		final char	SOCKET_CLOSED		= BluetoothConnectedThread.Callback.SOCKET_CLOSED;
 		final char	STOP_PERFORMANCE	= BluetoothConnectedThread.Callback.STOP_PERFORMANCE;
+		final char	STOP_OBSTACLE		= BluetoothConnectedThread.Callback.STOP_OBSTACLE;
 
 		void BluetoothResponse(char c);
 
