@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="app_name">CarProgrammator</string>
+    <string name="app_name">CarWirelessControl</string>
     <!-- menu -->
     <string name="action_devices_list">Found Device List</string>
     <string name="action_settings">Settings</string>
