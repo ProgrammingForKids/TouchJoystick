@@ -55,7 +55,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 				if (BluetoothDevice.ACTION_FOUND.equals(action))
 				{
 					// Get the BluetoothDevice object from the Intent
-					_menuitem_devicelist.setEnabled(false);
+					if (null != _menuitem_devicelist)
+					{
+						_menuitem_devicelist.setEnabled(false);
+					}
 					if (_is_discovery_finished)
 					{
 						_is_discovery_finished = false;
