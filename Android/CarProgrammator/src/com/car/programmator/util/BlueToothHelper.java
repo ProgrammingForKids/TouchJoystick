@@ -33,20 +33,16 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		final char	SOCKET_CLOSED		= BluetoothConnectedThread.Callback.SOCKET_CLOSED;
 		final char	STOP_PERFORMANCE	= BluetoothConnectedThread.Callback.STOP_PERFORMANCE;
 
-		void BTRespose(char c);
+		void BluetoothResponse(char c);
 
 		void HeartbeatStart(boolean ret);
 	}
 
 	private Callback mCallback;
 
-	public void registerCallBack(Callback callback)
+	public BlueToothHelper(Activity activity, Callback callback)
 	{
 		this.mCallback = callback;
-	}
-
-	public BlueToothHelper(Activity activity)
-	{
 		_activity = activity;
 		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		_bondedDeviceList = new ArrayList<String>();
@@ -104,7 +100,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	{
 		if (null != _bluetoothAdapter)
 		{
-			// If we're already discovering, stop it
 			if (_bluetoothAdapter.isDiscovering())
 			{
 				_bluetoothAdapter.cancelDiscovery();
@@ -156,6 +151,12 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public void IsBondedDevice()
 	{
+		checkBTState();
+		if (!isReady())
+		{
+			return;
+		}
+
 		_bondedDeviceList.clear();
 		Set<BluetoothDevice> pairedDevices = _bluetoothAdapter.getBondedDevices();
 		// If there are paired devices
@@ -265,7 +266,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 		else
 		{
-			mCallback.BTRespose(Callback.CONNECT_ERROR);
+			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
 		}
 	}
 
@@ -278,13 +279,13 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 		else
 		{
-			mCallback.BTRespose(Callback.CONNECT_ERROR);
+			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
 		}
 	}
 
 	@Override
 	public void BluetoothRespose(char c)
 	{
-		mCallback.BTRespose(c);
+		mCallback.BluetoothResponse(c);
 	}
 }// class BlueToothHelper

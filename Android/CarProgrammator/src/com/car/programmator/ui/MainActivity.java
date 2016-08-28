@@ -42,10 +42,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		_bth = new BlueToothHelper(this);
-		_bth.registerCallBack(this);
-		_ui = new UIHelper(this);
-		_ui.registerCallBack(this);
+		_bth = new BlueToothHelper(this, this);
+		_ui = new UIHelper(this, this);
 
 		_mreceiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
 		{
@@ -87,8 +85,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			}
 		};
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		this.registerReceiver(_mreceiver, filter);
-		// Register for broadcasts when discovery has finished
+		registerReceiver(_mreceiver, filter);
 		filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		registerReceiver(_mreceiver, filter);
 	}// onCreate
@@ -99,7 +96,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		super.onResume();
 		if (null != _bth)
 		{
-			_bth.startScanDevice();
 			if (!_bth.isConnected())
 			{
 				_bth.StartDiscovery();
@@ -131,13 +127,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private void BTConnect()
 	{
 		_hbeat.Stop();
-		_bth.StartDiscovery();
-		_bth.checkBTState();
-		if (_bth.isReady())
-		{
-			_bth.IsBondedDevice();
-			ShowDevices(_bth.DevicesList());
-		}
+		_bth.IsBondedDevice();
+		ShowDevices(_bth.DevicesList());
 	}
 
 	@Override
@@ -233,21 +224,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void ResposeToUiThread(char c)
 	{
-		// Toast.makeText(this, "Response: " + c, Toast.LENGTH_LONG).show();
 		if (!_ui.PerformMode())
 		{
 			if (c == 'H' || c == 'X')
 			{
 				_bth.isConnected();
-				return;
 			}
+			return;
 		}
 		if (!_ui.IsPerformedValid())
 		{
 			return;
 		}
-		char cd = _ui.OpcodeCurrent();
-		_ui.Unselect();
+		char cd = _ui.Unselect().OpcodeCurrent();
 		if ((cd - c) == ('a' - 'A'))
 		{
 			Performing();
@@ -283,7 +272,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	}
 
 	@Override
-	public void BTRespose(final char c)
+	public void BluetoothResponse(final char c)
 	{
 		Logger.Log.t(c);
 		this.runOnUiThread(new Runnable()

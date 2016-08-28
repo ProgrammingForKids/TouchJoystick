@@ -19,8 +19,8 @@ import android.widget.TextView;
 
 public class UIHelper implements Eraser.Callback
 {
-	private final int	SB_START		= 10;
-	private final int	SB_STOP			= 11;
+	private final int	SB_START		= R.drawable.start;
+	private final int	SB_STOP			= R.drawable.stop;
 	ImageHelper			_performed		= new ImageHelper();
 	ImageSelected		_imgselected	= null;
 	TextView			_prompt			= null;
@@ -41,11 +41,6 @@ public class UIHelper implements Eraser.Callback
 
 	private Callback mCallback;
 
-	public void registerCallBack(Callback callback)
-	{
-		mCallback = callback;
-	}
-
 	void PerformMode(boolean b)
 	{
 		_PerformMode = b;
@@ -56,8 +51,9 @@ public class UIHelper implements Eraser.Callback
 		return _PerformMode;
 	}
 
-	public UIHelper(Activity activity)
+	public UIHelper(Activity activity, Callback callback)
 	{
+		mCallback = callback;
 		this.activity = activity;
 		_imgselected = new ImageSelected(activity);
 		_eraser = new Eraser(activity, _imgselected);
@@ -234,8 +230,8 @@ public class UIHelper implements Eraser.Callback
 			if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 			{
 				_performed.view = _command_aria.getChildAt(_performed.index);
+				++_performed.index;
 				_performed.Select();
-				_performed.index += 1;
 				return OpcodeCurrent();
 			}
 		}
@@ -263,12 +259,13 @@ public class UIHelper implements Eraser.Callback
 		return _performed;
 	}
 
-	void Unselect()
+	UIHelper Unselect()
 	{
 		if (IsPerformedValid())
 		{
 			_performed.UnSelect();
 		}
+		return this;
 	}
 
 	void PerformError()
@@ -282,13 +279,13 @@ public class UIHelper implements Eraser.Callback
 	public void StartBntToStop()
 	{
 		_startBnt.setId(SB_STOP);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, R.drawable.stop));
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, SB_STOP));
 	}
 
 	public void StartBntToStart()
 	{
 		_startBnt.setId(SB_START);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, R.drawable.start));
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, SB_START));
 	}
 
 	boolean IsSelected()

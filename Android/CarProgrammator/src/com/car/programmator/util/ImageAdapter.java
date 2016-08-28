@@ -15,8 +15,8 @@ import android.widget.ImageView;
 public class ImageAdapter extends BaseAdapter
 {
 	private Context		mContext;
-	private String[]	_FileList	= new String[0];
-	private File		_Path		= new File(ChooseFileDialog.Path);
+	private String[]	mFileList	= new String[0];
+	private File		mPath		= new File(ChooseFileDialog.Path);
 
 	// private String[] FileList
 	public ImageAdapter(Context c)
@@ -52,7 +52,7 @@ public class ImageAdapter extends BaseAdapter
 		{
 			// if it's not recycled, initialize some attributes
 			imageView = new ImageView(mContext);
-			imageView.setLayoutParams(new GridView.LayoutParams(185, 185));
+			imageView.setLayoutParams(new GridView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 			imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
 			imageView.setPadding(8, 8, 8, 8);
 		}
@@ -60,21 +60,10 @@ public class ImageAdapter extends BaseAdapter
 		{
 			imageView = (ImageView) convertView;
 		}
+		float alpha=  (float) ((IsExist(position))?1.0:0.4);
 		imageView.setImageResource(mThumbIds[position]);
 		imageView.setId(position);
-		imageView.setAlpha((float)0.4);
-		if (0 < _FileList.length)
-		{
-			for (int k = 0; k < _FileList.length; ++k)
-			{
-				String fileName = Integer.toString(position) + ChooseFileDialog.FTYPE;
-				if(_FileList[k].equals(fileName))
-				{
-					imageView.setAlpha((float)1.0);
-					break;
-				}
-			}
-		}
+		imageView.setAlpha(alpha);
 		return imageView;
 	}
 
@@ -92,10 +81,26 @@ public class ImageAdapter extends BaseAdapter
 	{
 		return mThumbIds[position];
 	}
-	
+
+	boolean IsExist(int position)
+	{
+		if (0 < mFileList.length)
+		{
+			String fileName = Integer.toString(position) + ChooseFileDialog.FTYPE;
+			for (int k = 0; k < mFileList.length; ++k)
+			{
+				if (mFileList[k].equals(fileName))
+				{
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	void GetFiles()
 	{
-		if (_Path.exists())
+		if (mPath.exists())
 		{
 			FilenameFilter filter = new FilenameFilter()
 			{
@@ -108,12 +113,12 @@ public class ImageAdapter extends BaseAdapter
 				}
 
 			};
-			_FileList = _Path.list(filter);
+			mFileList = mPath.list(filter);
 		}
 		else
 		{
-			_Path.mkdirs();
-			_FileList = new String[0];
+			mPath.mkdirs();
+			mFileList = new String[0];
 		}
 	}
 }// class ImageAdapter
