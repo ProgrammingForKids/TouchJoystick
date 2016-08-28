@@ -1,4 +1,4 @@
-package com.car.programmator.util;
+package com.car.wirelesscontrol.util;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -7,7 +7,7 @@ import java.io.FileReader;
 import java.io.IOException;
 
 import com.car.programmator.ui.R;
-import com.car.programmator.ui.UIHelper;
+import com.car.wirelesscontrol.ui.UIHelper;
 
 import android.app.Dialog;
 import android.content.Context;

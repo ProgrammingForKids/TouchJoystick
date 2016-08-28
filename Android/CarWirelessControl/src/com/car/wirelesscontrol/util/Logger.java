@@ -1,4 +1,4 @@
-package com.car.programmator.util;
+package com.car.wirelesscontrol.util;
 
 public class Logger
 {

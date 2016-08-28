@@ -1,8 +1,10 @@
-package com.car.programmator.ui;
+package com.car.wirelesscontrol.ui;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import com.car.programmator.util.*;
+
+import com.car.programmator.ui.R;
+import com.car.wirelesscontrol.util.*;
 
 import android.app.Activity;
 import android.app.Dialog;

@@ -1,7 +1,7 @@
-package com.car.programmator.ui;
+package com.car.wirelesscontrol.ui;
 
-import com.car.programmator.util.Logger;
-import com.car.programmator.util.OpCode;
+import com.car.wirelesscontrol.util.Logger;
+import com.car.wirelesscontrol.util.OpCode;
 
 import android.content.Context;
 import android.graphics.Color;

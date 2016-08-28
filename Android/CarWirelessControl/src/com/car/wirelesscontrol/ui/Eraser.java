@@ -1,4 +1,6 @@
-package com.car.programmator.ui;
+package com.car.wirelesscontrol.ui;
+
+import com.car.programmator.ui.R;
 
 import android.app.Activity;
 import android.view.View;
