@@ -153,10 +153,7 @@ public class UIHelper implements Eraser.Callback
 																{
 																	return;
 																}
-																Logger.Log.t("longTouch", "ID", v.getId());
-																ImageView iv = ImageHelper.CreateImage(activity, v.getId());
-																iv.setOnClickListener(_OnClickSelectInsert);
-																iv.setOnLongClickListener(myOnLongClickListener);
+																ImageView iv = ImageToCommandArea(v.getId());
 																if (-1 < _imgselected.InsertIndex())
 																{
 																	_command_aria.addView(iv, _imgselected.InsertIndex());
@@ -220,9 +217,9 @@ public class UIHelper implements Eraser.Callback
 															}
 
 														};
-	private MenuItem	ShowFileMenuItem;
+	private MenuItem	_showFileMenuItem;
 	private String		_commandString;
-	private int			_FileIconId;
+	private int			_fileIconId;
 
 	char OpcodeToDo()
 	{
@@ -245,15 +242,10 @@ public class UIHelper implements Eraser.Callback
 		return OpCode.OpcodeC(_performed.Opcode());
 	}
 
-	void ToStart()
+	void PreparationForStart()
 	{
 		_performed.RestoreImage(this.activity);
 		_performed.index = 0;
-	}
-
-	boolean IsPerformedValid()
-	{
-		return (null != _performed);
 	}
 
 	ImageHelper Performed()
@@ -270,6 +262,11 @@ public class UIHelper implements Eraser.Callback
 		return this;
 	}
 
+	boolean IsPerformedValid()
+	{
+		return (null != _performed);
+	}
+
 	void PerformError()
 	{
 		if (IsPerformedValid())
@@ -277,11 +274,12 @@ public class UIHelper implements Eraser.Callback
 			_performed.SetImage(this.activity, R.drawable.x);
 		}
 	}
+
 	public void PerformObstacle()
 	{
 		if (IsPerformedValid())
 		{
-			_performed.SetImage(this.activity,R.drawable.o);
+			_performed.SetImage(this.activity, R.drawable.o);
 		}
 	}
 
@@ -302,7 +300,8 @@ public class UIHelper implements Eraser.Callback
 		return _imgselected.IsSelected();
 	}
 
-	public String CommandString()
+	// Command area
+	public String CommandToString()
 	{
 		String ret = "";
 		int count = _command_aria.getChildCount();
@@ -315,17 +314,45 @@ public class UIHelper implements Eraser.Callback
 		return ret;
 	}
 
+	public void StringToCommand(String commands)
+	{
+		SaveCommandString(commands);
+		_command_aria.removeAllViews();
+		int length = commands.length();
+		for (int k = 0; k < length; ++k)
+		{
+			char c = commands.charAt(k);
+			int id = OpCode.ImageId(c);
+			if (0 != id)
+			{
+				ImageView iv = ImageToCommandArea(id);
+				_command_aria.addView(iv);
+			}
+		}
+	}
+
+	private ImageView ImageToCommandArea(int id)
+	{
+		ImageView iv = ImageHelper.CreateImage(activity, id);
+		if (null != iv)
+		{
+			iv.setOnClickListener(_OnClickSelectInsert);
+			iv.setOnLongClickListener(myOnLongClickListener);
+		}
+		return iv;
+	}
+
 	boolean IsCommandStringChanged()
 	{
-		String t = CommandString();
+		String t = CommandToString();
 		boolean ret = t.equals(_commandString);
 		if (!ret)
 		{
-			ShowFileMenuItem.setIcon(R.drawable.noload);
+			_showFileMenuItem.setIcon(R.drawable.noload);
 		}
 		else
 		{
-			ShowFileMenuItem.setIcon(_FileIconId);
+			_showFileMenuItem.setIcon(_fileIconId);
 		}
 
 		return ret;
@@ -336,58 +363,23 @@ public class UIHelper implements Eraser.Callback
 		_commandString = string;
 	}
 
-	public void SetCommand(String commands)
-	{
-		SaveCommandString(commands);
-		_command_aria.removeAllViews();
-		int length = commands.length();
-		for (int k = 0; k < length; ++k)
-		{
-			char c = commands.charAt(k);
-			int id = 0;
-			switch (c)
-			{
-				case 'f':
-					id = OpCode._FORWARD;
-					break;
-				case 'b':
-					id = OpCode._BACK;
-					break;
-				case 'l':
-					id = OpCode._LEFT;
-					break;
-				case 'r':
-					id = OpCode._RIGHT;
-					break;
-				default:
-					return;
-			}
-
-			ImageView iv = ImageHelper.CreateImage(activity, id);
-			iv.setOnClickListener(_OnClickSelectInsert);
-			iv.setOnLongClickListener(myOnLongClickListener);
-			_command_aria.addView(iv);
-
-		}
-	}
-
 	public void SetFileIcon(int iconId)
 	{
-		_FileIconId = iconId;
+		_fileIconId = iconId;
 	}
 
 	public void ShowFileIcon()
 	{
-		if (null != ShowFileMenuItem)
+		if (null != _showFileMenuItem)
 		{
-			ShowFileMenuItem.setIcon(_FileIconId);
+			_showFileMenuItem.setIcon(_fileIconId);
 		}
 
 	}
 
 	public void SetMenuItem(MenuItem findItem)
 	{
-		ShowFileMenuItem = findItem;
+		_showFileMenuItem = findItem;
 	}
 
 	@Override
@@ -395,6 +387,5 @@ public class UIHelper implements Eraser.Callback
 	{
 		IsCommandStringChanged();
 	}
-
 
 }// class UIHelper

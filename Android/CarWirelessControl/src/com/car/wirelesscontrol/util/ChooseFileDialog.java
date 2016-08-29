@@ -65,12 +65,12 @@ public class ChooseFileDialog
 							String comm = Load(file);
 							if (null != comm)
 							{
-								_ui.SetCommand(comm);
+								_ui.StringToCommand(comm);
 								b = true;
 							}
 							break;
 						case DIALOG_SAVE_FILE:
-							String data = _ui.CommandString();
+							String data = _ui.CommandToString();
 							_ui.SaveCommandString(data);
 							b = Save(file, data);
 							break;

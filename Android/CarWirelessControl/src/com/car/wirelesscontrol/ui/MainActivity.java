@@ -199,7 +199,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private void StartPerform()
 	{
 		_ui.StartBntToStop();
-		_ui.ToStart();
+		_ui.PreparationForStart();
 		_ui.PerformMode(true);
 		Performing();
 	}

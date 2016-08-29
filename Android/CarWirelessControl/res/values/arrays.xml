@@ -6,7 +6,7 @@
         <item>@drawable/b</item>
         <item>@drawable/r</item>
         <item>@drawable/l</item>
-        <item>@drawable/empty</item>
+        <item>@drawable/insert</item>
         </array>
 
 </resources>

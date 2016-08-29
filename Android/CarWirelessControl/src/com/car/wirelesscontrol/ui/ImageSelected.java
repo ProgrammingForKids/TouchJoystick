@@ -35,7 +35,7 @@ public class ImageSelected
 	void Set(View v, int index)
 	{
 		_selected.Set(v, index).Select();
-		_insert.Set(ImageHelper.CreateImage(activity, OpCode._EMPTY), index);
+		_insert.Set(ImageHelper.CreateImage(activity, OpCode._INSERT), index);
 	}
 
 	int InsertIndex()
