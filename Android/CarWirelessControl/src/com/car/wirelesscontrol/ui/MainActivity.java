@@ -15,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -34,10 +33,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private BlueToothHelper		_bth					= null;
 	private UIHelper			_ui						= null;
 	private BroadcastReceiver	_mreceiver				= null;
-	Heartbeat					_hbeat					= new Heartbeat();
-	Handler						_handler				= new Handler();
+	//private Heartbeat			_hbeat					= new Heartbeat();
 	private boolean				_is_discovery_finished	= false;
-	private MenuItem			_menuitem_devicelist;
+	private MenuItem			_menuitem_devicelist	= null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -131,9 +129,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void BTConnect()
 	{
-		_hbeat.Stop();
 		_bth.IsBondedDevice();
 		ShowDevices(_bth.DevicesList());
+		_bth.isConnected();
 	}
 
 	@Override
@@ -198,9 +196,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void StartPerform()
 	{
+		_ui.PerformMode(true);
 		_ui.StartBntToStop();
 		_ui.PreparationForStart();
-		_ui.PerformMode(true);
 		Performing();
 	}
 
@@ -231,8 +229,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		if (!_ui.PerformMode())
 		{
-			if (c == 'H' || c == 'X')
+			if ((c == 'H') || (c == 'X'))
 			{
+				_bth.SetLED(true);
+			}
+			else
+			{
+				_bth.SetLED(false);
 				_bth.isConnected();
 			}
 			return;
@@ -245,34 +248,40 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		if ((cd - c) == ('a' - 'A'))
 		{
 			Performing();
+			return;
 		}
-		else if (STOP_PERFORMANCE == c)
+		StopPerform();
+		switch (c)
 		{
-			StopPerform();
+			case STOP_PERFORMANCE:
+			{
+				break;
+			}
+			case STOP_OBSTACLE:
+			{
+				_ui.PerformObstacle();
+				break;
+			}
+			case SOCKET_CLOSED:
+			case CONNECT_ERROR:
+			{
+				_bth.SetLED(false);
+				break;
+			}
+			default:
+			{
+				_ui.PerformError();
+			}
 		}
-		else if(STOP_OBSTACLE == c)
-		{
-			StopPerform();
-			_ui.PerformObstacle();
-		}
-		else if (SOCKET_CLOSED == c || CONNECT_ERROR == c)
-		{
-			StopPerform();
-			_bth.SetLED(false);
-		}
-		else
-		{
-			StopPerform();
-			_ui.PerformError();
-		}
-
 	}
 
 	@Override
 	public void onStartPerform()
 	{
-		_bth.isConnected();
-		StartPerform();
+		if (_bth.isConnected())
+		{
+			StartPerform();
+		}
 	}
 
 	@Override
@@ -394,14 +403,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void HeartbeatStart(boolean b)
 	{
-		if (b)
-		{
-			_hbeat.Start();
-		}
-		else
-		{
-			_hbeat.Stop();
-		}
+//		if (b)
+//		{
+//			_hbeat.Start();
+//		}
+//		else
+//		{
+//			_hbeat.Stop();
+//		}
 	}
 
 }// class MainActivity

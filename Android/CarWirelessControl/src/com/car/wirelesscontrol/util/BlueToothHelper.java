@@ -14,12 +14,11 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 {
 	static final int			REQUEST_ENABLE_BT			= 1;
 	final static int			RECIEVE_MESSAGE				= 1;
-	private final String		device_name					= "Unknown";
+	
 	private BluetoothAdapter	_bluetoothAdapter			= null;
 	BluetoothConnectedThread	_BluetoothConnectedThread	= null;
 	private ArrayList<String>	_bondedDeviceList			= null;
 	private ArrayList<String>	_foundDeviceList			= null;
-	private String				_device_name				= device_name;
 	final Activity				_activity;
 
 	public ArrayList<String> DevicesList()
@@ -44,6 +43,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public BlueToothHelper(Activity activity, Callback callback)
 	{
 		this.mCallback = callback;
+		this._activity.getActionBar().setTitle(BluetoothConnectedThread.DefaultDeviceName);
 		_activity = activity;
 		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		_bondedDeviceList = new ArrayList<String>();
@@ -59,15 +59,14 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public boolean isConnected()
 	{
 		boolean ret = false;
+		String title = ""; 
 		if (null != _BluetoothConnectedThread)
 		{
 			ret = _BluetoothConnectedThread.isConnected();
+			title = _BluetoothConnectedThread.DeviceName();
 		}
-		String title = _device_name;
 		this._activity.getActionBar().setTitle(title);
-		int resId = (ret) ? R.drawable.green : R.drawable.red;
-		mCallback.HeartbeatStart(ret);
-		this._activity.getActionBar().setIcon(resId);
+		SetLED(ret);
 		return ret;
 	}
 
@@ -112,12 +111,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public void Finalize()
 	{
-		_device_name = device_name;
 		if (null != _BluetoothConnectedThread)
 		{
 			BluetoothConnectedThread tmp = _BluetoothConnectedThread;
 			tmp.Cancel();
-			tmp.interrupt();
 			_BluetoothConnectedThread = null;
 		}
 	}
@@ -226,26 +223,17 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 		final String mac = name_mac.substring(pos + 1);
 		// Set up a pointer to the remote node using it's address.
-		BluetoothDevice device = _bluetoothAdapter.getRemoteDevice(mac);
-		if (null != device)
-		{
-			_device_name = device.getName();
-		}
-		else
-		{
-			_device_name = device_name;
-			this._activity.getActionBar().setTitle("No Bluetooth Connection");
-		}
 		if (null != _BluetoothConnectedThread)
 		{
 			BluetoothConnectedThread tmp = _BluetoothConnectedThread;
 			tmp.Cancel();
-			tmp.interrupt();
 		}
 
 		_BluetoothConnectedThread = new BluetoothConnectedThread(this);
-		_BluetoothConnectedThread.Init(_bluetoothAdapter, mac);
-		_BluetoothConnectedThread.start();
+		if (_BluetoothConnectedThread.Init(_bluetoothAdapter, mac))
+		{
+			_BluetoothConnectedThread.start();
+		}
 
 		new android.os.Handler().postDelayed(
 				new Runnable()
