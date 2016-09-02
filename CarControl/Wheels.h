@@ -5,7 +5,21 @@
 class Wheels
 {
   protected:
-    class Motor;
+    class Motor
+    {
+      protected:
+        Motor() {}
+      public:
+        enum eDir { dirNone, dirClockwise, dirCounterclockwise };
+    
+        virtual eDir Direction() const = 0;
+        virtual int Speed() const = 0;
+    
+        virtual void Set(eDir targetDir, int targetSpeed) = 0;
+        virtual void Brake() = 0;
+    
+        virtual void begin() = 0;
+    };
 
     Motor* _mA;
     Motor* _mB;
@@ -15,6 +29,8 @@ class Wheels
 
     virtual void doStandby() = 0;
     virtual void doEnable() = 0;
+
+    virtual bool SetTarget(Motor::eDir targetDirA, Motor::eDir targetDirB, int targetSpeed);
 
   public:
     //  Motion functions signal the driver to start execution of the command
@@ -27,18 +43,6 @@ class Wheels
     bool Back();
     bool Stop();
     bool Brake();
-    virtual void begin() = 0;
-};
-
-class Wheels::Motor
-{
-  protected:
-    Motor() {}
-  public:
-    virtual bool GoClockwise() = 0;
-    virtual bool GoCounterclockwise() = 0;
-    virtual bool Stop() = 0;
-    virtual bool Brake() = 0;
     virtual void begin() = 0;
 };
 

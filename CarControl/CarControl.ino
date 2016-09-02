@@ -182,7 +182,8 @@ void loop()
       bSetActionConstrain = true;
       ongoingOp = BT.read();
       reply = ongoingOp + 'A' - 'a';
-      Log("Fetched command ")(ongoingOp);
+      //if (ongoingOp != 'h')
+        Log("Fetched command ")(ongoingOp);
     }
     else if (! bStopped)
     {
