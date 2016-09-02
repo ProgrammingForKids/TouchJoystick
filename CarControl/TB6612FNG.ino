@@ -4,7 +4,7 @@
 class TB6612FNG::TBMotor : public Wheels::Motor
 {
     static const int Step = 32;
-    static const int initSpeed = 160;
+    static const int initSpeed = 96;
 
     const int _pin1;
     const int _pin2;

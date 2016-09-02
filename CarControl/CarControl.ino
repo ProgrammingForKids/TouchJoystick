@@ -69,7 +69,7 @@ void setup()
 }
 
 static const unsigned long RunningTime = 500;
-static const unsigned long RotationTime = 150;
+static const unsigned long RotationTime = 125;
 
 bool bOutlookRequired = false;
 
@@ -104,7 +104,7 @@ struct ForwardTraits
 {
   static bool WheelsMotion(Wheels& w) { return w.Forward(); }
   static constexpr unsigned long ActionTime() { return RunningTime; }
-  static constexpr unsigned long WheelsStepTime() { return 10; }
+  static constexpr unsigned long WheelsStepTime() { return 20; }
   static constexpr bool OutlookRequired() { return true; }
   static constexpr const char* Name()  { return "Forward"; }
 };
@@ -113,7 +113,7 @@ struct BackTraits
 {
   static bool WheelsMotion(Wheels& w) { return w.Back(); }
   static constexpr unsigned long ActionTime() { return RunningTime; }
-  static constexpr unsigned long WheelsStepTime() { return 15; }
+  static constexpr unsigned long WheelsStepTime() { return 20; }
   static constexpr bool OutlookRequired() { return false; }
   static constexpr const char* Name()  { return "Back"; }
 };
@@ -121,7 +121,7 @@ struct BackTraits
 struct TurnTraits
 {
   static constexpr unsigned long ActionTime() { return RotationTime; }
-  static constexpr unsigned long WheelsStepTime() { return 15; }
+  static constexpr unsigned long WheelsStepTime() { return 5; }
   static constexpr bool OutlookRequired() { return false; }  
 };
 
