@@ -25,9 +25,9 @@ bool Outlook::isInRange()
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
   digitalWrite(_pinTrig, LOW);
-  delayMicroseconds(5);
-  digitalWrite(_pinTrig, HIGH);
   delayMicroseconds(10);
+  digitalWrite(_pinTrig, HIGH);
+  delayMicroseconds(15);
   digitalWrite(_pinTrig, LOW);
 
   // Read the signal from the sensor: a HIGH pulse whose
