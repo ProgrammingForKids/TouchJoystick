@@ -82,6 +82,10 @@ bool ProbeOutlook()
       wheels.Brake();
       bStopped = true;
       bOutlookRequired = false;
+      while (BT.available())
+      {
+        BT.read();
+      }
       BT.print('O');
       Log("Obstacle");
       ongoingOp = '\0';
@@ -114,21 +118,22 @@ struct BackTraits
   static constexpr const char* Name()  { return "Back"; }
 };
 
-struct LeftTraits
+struct TurnTraits
+{
+  static constexpr unsigned long ActionTime() { return RotationTime; }
+  static constexpr unsigned long WheelsStepTime() { return 15; }
+  static constexpr bool OutlookRequired() { return false; }  
+};
+
+struct LeftTraits : public TurnTraits
 {
   static bool WheelsMotion(Wheels& w) { return w.Left(); }
-  static constexpr unsigned long ActionTime() { return RotationTime; }
-  static constexpr unsigned long WheelsStepTime() { return 2; }
-  static constexpr bool OutlookRequired() { return false; }
   static constexpr const char* Name()  { return "Left"; }
 };
 
-struct RightTraits
+struct RightTraits : public TurnTraits
 {
   static bool WheelsMotion(Wheels& w) { return w.Right(); }
-  static constexpr unsigned long ActionTime() { return RotationTime; }
-  static constexpr unsigned long WheelsStepTime() { return 2; }
-  static constexpr bool OutlookRequired() { return false; }
   static constexpr const char* Name()  { return "Right"; }
 };
 
