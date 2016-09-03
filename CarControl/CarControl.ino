@@ -40,12 +40,9 @@ SoftwareSerial BT(12, 2);
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
 
-TimeConstrain wheelsConstrain;
-TimeConstrain actionConstrain;
-TimeConstrain outlookConstrain;
-
-#define USE_SERIAL_MONITOR
-
+TimeConstrain wheelsConstrain("Wheels");
+TimeConstrain actionConstrain("Action");
+TimeConstrain outlookConstrain("Outlook");
 
 bool bStopped;
 char ongoingOp;
@@ -69,7 +66,8 @@ void setup()
 }
 
 static const unsigned long RunningTime = 500;
-static const unsigned long RotationTime = 125;
+static const unsigned long RotationTime = 150;
+static const unsigned long pauseBetweenDirectionChanges = 500;
 
 bool bOutlookRequired = false;
 
@@ -102,7 +100,7 @@ bool ProbeOutlook()
 
 struct ForwardTraits
 {
-  static bool WheelsMotion(Wheels& w) { return w.Forward(); }
+  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Forward(); }
   static constexpr unsigned long ActionTime() { return RunningTime; }
   static constexpr unsigned long WheelsStepTime() { return 20; }
   static constexpr bool OutlookRequired() { return true; }
@@ -111,7 +109,7 @@ struct ForwardTraits
 
 struct BackTraits
 {
-  static bool WheelsMotion(Wheels& w) { return w.Back(); }
+  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Back(); }
   static constexpr unsigned long ActionTime() { return RunningTime; }
   static constexpr unsigned long WheelsStepTime() { return 20; }
   static constexpr bool OutlookRequired() { return false; }
@@ -121,19 +119,19 @@ struct BackTraits
 struct TurnTraits
 {
   static constexpr unsigned long ActionTime() { return RotationTime; }
-  static constexpr unsigned long WheelsStepTime() { return 5; }
+  static constexpr unsigned long WheelsStepTime() { return 10; }
   static constexpr bool OutlookRequired() { return false; }  
 };
 
 struct LeftTraits : public TurnTraits
 {
-  static bool WheelsMotion(Wheels& w) { return w.Left(); }
+  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Left(); }
   static constexpr const char* Name()  { return "Left"; }
 };
 
 struct RightTraits : public TurnTraits
 {
-  static bool WheelsMotion(Wheels& w) { return w.Right(); }
+  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Right(); }
   static constexpr const char* Name()  { return "Right"; }
 };
 
@@ -150,14 +148,26 @@ struct MoveOp
 
     if (wheelsConstrain.check())
     {
-      if (Traits::WheelsMotion(wheels))
+      const Wheels::eCompletion completion = Traits::WheelsMotion(wheels);
+      if (completion == Wheels::DONE)
       {
         ongoingOp = '\0';
         Log("Accomplished ")(Traits::Name());
       }
       else
       {
-        wheelsConstrain.set(Traits::WheelsStepTime());
+        if (completion == Wheels::STOPPED)
+        {
+         // wheelsConstrain.set(pauseBetweenDirectionChanges);
+        }
+        else
+        {
+          wheelsConstrain.set(Traits::WheelsStepTime());
+          if (completion == Wheels::STOPPING)
+          {
+            actionConstrain.set(Traits::ActionTime());
+          }
+        }
       }
     }
     bStopped  = false;
@@ -196,7 +206,7 @@ void loop()
   switch (ongoingOp)
   {
   case 'h':
-    actionConstrain.set(0);
+    //actionConstrain.set(0);
     ongoingOp = '\0';
     break;
 
@@ -227,7 +237,7 @@ void loop()
   case 's':
     if (wheelsConstrain.check())
     {
-      if (wheels.Stop())
+      if (wheels.Stop() == Wheels::DONE)
       {
         ongoingOp = '\0';
         bStopped  = true;

@@ -37,7 +37,7 @@ static int SpeedStep(int oldVal, int newVal)
   }
 }
 
-bool Wheels::SetTarget(Wheels::Motor::eDir targetDirA, Wheels::Motor::eDir targetDirB, int targetSpeed)
+Wheels::eCompletion Wheels::SetTarget(Wheels::Motor::eDir targetDirA, Wheels::Motor::eDir targetDirB, int targetSpeed)
 {
   const Motor::eDir currentDirA = _mA->Direction();
   const Motor::eDir currentDirB = _mB->Direction();
@@ -56,7 +56,10 @@ bool Wheels::SetTarget(Wheels::Motor::eDir targetDirA, Wheels::Motor::eDir targe
     _mA->Set(targetDirA, newSpeedA);
     _mB->Set(targetDirB, newSpeedB);
     // return true if the target speed was reached at the last Go()
-    return (targetSpeed == newSpeedA) && (targetSpeed == newSpeedB);
+    if ( (targetSpeed == newSpeedA) && (targetSpeed == newSpeedB) )
+      return DONE;
+    else
+      return STARTING;
   }
 
   // Otherwise decelerate and stop before going further
@@ -68,61 +71,63 @@ bool Wheels::SetTarget(Wheels::Motor::eDir targetDirA, Wheels::Motor::eDir targe
   if (newSpeedA == 0 && newSpeedB == 0)
   {
     doStandby();
-    return (targetSpeed == 0);
+    if (targetSpeed == 0)
+      return DONE;
+    else
+      return STOPPED;
   }
   else
   {
-    return false;
+    return STOPPING;
   }
 }
 
-bool Wheels::Left()
+Wheels::eCompletion Wheels::Left()
 {
   Log("Wheels::Left");
   doEnable();
   return SetTarget(Motor::dirCounterclockwise, Motor::dirClockwise, 255);
 }
 
-bool Wheels::Right()
+Wheels::eCompletion Wheels::Right()
 {
   Log("Wheels::Right");
   doEnable();
   return SetTarget(Motor::dirClockwise, Motor::dirCounterclockwise, 255);
 }
 
-bool Wheels::Forward()
+Wheels::eCompletion Wheels::Forward()
 {
   Log("Wheels::Forward");
   doEnable();
   return SetTarget(Motor::dirClockwise, Motor::dirClockwise, 255);
 }
 
-bool Wheels::Back()
+Wheels::eCompletion Wheels::Back()
 {
   Log("Wheels::Back");
   doEnable();
   return SetTarget(Motor::dirCounterclockwise, Motor::dirCounterclockwise, 255);
 }
 
-bool Wheels::Stop()
+Wheels::eCompletion Wheels::Stop()
 {
   Log("Wheels::Stop");
-  if (SetTarget(Motor::dirNone, Motor::dirNone, 0))
+  if (SetTarget(Motor::dirNone, Motor::dirNone, 0) == DONE)
   {
     doStandby();
-    return true;
+    return DONE;
   }
   else
   {
-    return false;
+    return STOPPING;
   }
 }
 
-bool Wheels::Brake()
+void Wheels::Brake()
 {
   Log("Wheels::Brake");
   _mA->Brake();
   _mB->Brake();
   doStandby();
-  return true;
 }

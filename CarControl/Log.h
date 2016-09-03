@@ -40,9 +40,11 @@ public:
 
 class Log
 {
+public:
   Log(){};
   Log(String) {};
   template <typename _T> Log& operator()(_T) {}
+  static void begin() {}
 };
 
 #endif // USE_SERIAL_PRINT
