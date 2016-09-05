@@ -3,9 +3,6 @@
 
 class TB6612FNG::TBMotor : public Wheels::Motor
 {
-    static const int Step = 32;
-    static const int initSpeed = 160;
-
     const int _pin1;
     const int _pin2;
     const int _pinPWM;
@@ -14,59 +11,6 @@ class TB6612FNG::TBMotor : public Wheels::Motor
     int _speed;
     int _val1;
     int _val2;
-
-    int SpeedStepUp()
-    {
-      if (_speed == 255)
-      {
-        return 255;
-      }
-
-      if (_speed < initSpeed)
-      {
-        return initSpeed;
-      }
-
-      if (_speed + Step > 255)
-      {
-        return 255;
-      }
-      
-      return _speed + Step;
-    }
-
-    int SpeedStepDown()
-    {
-      if (_speed <= initSpeed)
-      {
-        return 0;
-      }      
-      else
-      {
-        return _speed - Step;
-      }
-    }
-
-    bool Rotate(int p1, int p2)
-    {
-      
-      if (p1 != _val1 || p2 != _val2)
-      {
-        if (_speed != 0)
-        {
-          Stop();
-          return false;
-        }
-      }
-
-      _speed = SpeedStepUp();
-      _val1 = p1;
-      _val2 = p2;
-      analogWrite(_pinPWM, _speed);
-      digitalWrite(_pin1, p1);
-      digitalWrite(_pin2, p2);
-      return _speed == 255;
-    }
 
     void Report(String op)
     {
@@ -92,52 +36,63 @@ class TB6612FNG::TBMotor : public Wheels::Motor
       pinMode(_pinPWM, OUTPUT);
     }
     
-    bool GoClockwise()
+    eDir Direction() const
     {
-      bool retval = Rotate(HIGH, LOW);
-      Report("Clockwise");
-      return retval;
+      if (_val1 == HIGH)
+      {
+        if (_val2 == LOW)
+          return dirClockwise;
+        else
+          return dirNone;
+      }
+      else
+      {
+        if (_val2 == LOW)
+          return dirNone;
+        else
+          return dirCounterclockwise;        
+      }
+    }
+
+    virtual int Speed() const
+    {
+      return _speed;
     }
     
-    bool GoCounterclockwise()
+    virtual void Set(eDir targetDir, int targetSpeed)
     {
-      bool retval = Rotate(LOW, HIGH);
-      Report("Counterclockwise");
-      return retval;
-    }
-    
-    bool Stop()
-    {
-      bool retval = true;
+      String opname;
       
-      if (_speed > 0)
+      switch (targetDir)
       {
-        _speed = SpeedStepDown();
-        if (_speed > 0)
-          analogWrite(_pinPWM, _speed);
-        retval = false;
-      }
+      case dirClockwise:
+        _val1 = HIGH;
+        _val2 = LOW;
+        opname = "Clockwise";
+        break;
 
-      if (_speed == 0)
-      {
-        if (_val1 != LOW)
-        {
-          digitalWrite(_pin1, LOW);
-          _val1 = LOW;
-          retval = false;
-        }
-        if (_val2 != LOW)
-        {
-          digitalWrite(_pin2, LOW);
-          _val2 = LOW;
-          retval = false;
-        }
+      case dirCounterclockwise:
+        _val1 = LOW;
+        _val2 = HIGH;
+        opname = "Counterclockwise";
+        break;
+
+      case dirNone:
+        _val1 = LOW;
+        _val2 = LOW;
+        opname = "Stop";
+        break;
       }
-      Report("Stop");
-      return retval;
+      _speed = targetSpeed;
+
+      analogWrite(_pinPWM, _speed);
+      digitalWrite(_pin1, _val1);
+      digitalWrite(_pin2, _val2);
+      Report(opname);
     }
 
-    bool Brake()
+
+    void Brake()
     {
       analogWrite(_pinPWM, 0);
       digitalWrite(_pin1, LOW);
@@ -146,7 +101,6 @@ class TB6612FNG::TBMotor : public Wheels::Motor
       _val1 = LOW;
       _val2 = LOW;
       Report("Brake");
-      return true;
     }
 };
 
