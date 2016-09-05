@@ -14,7 +14,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 {
 	static final int			REQUEST_ENABLE_BT			= 1;
 	final static int			RECIEVE_MESSAGE				= 1;
-	
+
 	private BluetoothAdapter	_bluetoothAdapter			= null;
 	BluetoothConnectedThread	_BluetoothConnectedThread	= null;
 	private ArrayList<String>	_bondedDeviceList			= null;
@@ -43,8 +43,8 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public BlueToothHelper(Activity activity, Callback callback)
 	{
 		this.mCallback = callback;
-		this._activity.getActionBar().setTitle(BluetoothConnectedThread.DefaultDeviceName);
 		_activity = activity;
+		_activity.getActionBar().setTitle(BluetoothConnectedThread.DefaultDeviceName);
 		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		_bondedDeviceList = new ArrayList<String>();
 		_foundDeviceList = new ArrayList<String>();
@@ -59,7 +59,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public boolean isConnected()
 	{
 		boolean ret = false;
-		String title = ""; 
+		String title = "";
 		if (null != _BluetoothConnectedThread)
 		{
 			ret = _BluetoothConnectedThread.isConnected();
