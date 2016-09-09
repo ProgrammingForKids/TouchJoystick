@@ -2,6 +2,7 @@ package com.car.wirelesscontrol.ui;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Stack;
 
 import com.car.programmator.ui.R;
 import com.car.wirelesscontrol.util.*;
@@ -33,9 +34,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private BlueToothHelper		_bth					= null;
 	private UIHelper			_ui						= null;
 	private BroadcastReceiver	_mreceiver				= null;
-	//private Heartbeat			_hbeat					= new Heartbeat();
+	// private Heartbeat _hbeat = new Heartbeat();
 	private boolean				_is_discovery_finished	= false;
 	private MenuItem			_menuitem_devicelist	= null;
+	private SoundHelper			_sound					= new SoundHelper();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -97,6 +99,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	public void onResume()
 	{
 		super.onResume();
+		_sound.Create(this);
 		if (null != _bth)
 		{
 			if (!_bth.isConnected())
@@ -108,6 +111,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 				}
 			}
 		}
+	}
+
+	@Override
+	protected void onPause()
+	{
+		super.onPause();
+		_sound.Release();
 	}
 
 	@Override
@@ -196,9 +206,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void StartPerform()
 	{
+		//_sound.PlayDing();
+		_sound.PlayHorn();
 		_ui.PerformMode(true);
 		_ui.StartBntToStop();
 		_ui.PreparationForStart();
+		_ui.Chunk.Init();
+		SendImitator();
 		Performing();
 	}
 
@@ -209,6 +223,18 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	}
 
 	void Performing()
+	{
+		if (!_ui.PerformMode())
+		{
+			return;
+		}
+		String pkg = _ui.Chunk.GetFirst();
+		SendImitator(pkg);
+		// _bth.Send(pkg);
+		_ui.OpcodeToDo();
+	}
+
+	void Performing_one_to_one()
 	{
 		if (!_ui.PerformMode())
 		{
@@ -227,29 +253,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void ResposeToUiThread(char c)
 	{
-		if (!_ui.PerformMode())
-		{
-			if ((c == 'H') || (c == 'X'))
-			{
-				_bth.SetLED(true);
-			}
-			else
-			{
-				_bth.SetLED(false);
-				_bth.isConnected();
-			}
-			return;
-		}
-		if (!_ui.IsPerformedValid())
-		{
-			return;
-		}
 		char cd = _ui.Unselect().OpcodeCurrent();
+		_ui.Select();
 		if ((cd - c) == ('a' - 'A'))
 		{
-			Performing();
-			return;
+			Logger.Log.e("KOKA", c, cd);
+			if (_ui.Chunk.IsNeedNext())
+			{
+				String buf = _ui.Chunk.GetNext();
+				SendImitator(buf);
+				return;
+			}
 		}
+		_ui.Unselect();
 		StopPerform();
 		switch (c)
 		{
@@ -272,13 +288,15 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			{
 				_ui.PerformError();
 			}
+
 		}
+
 	}
 
 	@Override
 	public void onStartPerform()
 	{
-		if (_bth.isConnected())
+		// if (_bth.isConnected()) sasa
 		{
 			StartPerform();
 		}
@@ -298,6 +316,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			public void run()
 			{
+				// ResposeToUiThread(c);
 				ResposeToUiThread(c);
 			}
 		});
@@ -403,14 +422,57 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void HeartbeatStart(boolean b)
 	{
-//		if (b)
-//		{
-//			_hbeat.Start();
-//		}
-//		else
-//		{
-//			_hbeat.Stop();
-//		}
+		// if (b)
+		// {
+		// _hbeat.Start();
+		// }
+		// else
+		// {
+		// _hbeat.Stop();
+		// }
+	}
+
+	Stack<Character> cmd = new Stack<Character>();
+
+	void SendImitator(String buf)
+	{
+		for (int k = 0; k < buf.length(); ++k)
+		{
+			cmd.add(0, buf.charAt(k));
+		}
+		return;
+	}
+
+	void SendImitator()
+	{
+		new Thread(new Runnable()
+		{
+			@Override
+			public void run()
+			{
+
+				while (true)
+				{
+					try
+					{
+						Thread.sleep(1000);
+					}
+					catch (InterruptedException e)
+					{
+					}
+					if (0 == cmd.size())
+					{
+						BluetoothResponse(STOP_PERFORMANCE);
+						Logger.Log.e("KOKA", "STOP");
+						break;
+					}
+					char c = cmd.pop();
+					c -= ('a' - 'A');
+					BluetoothResponse(c);
+
+				}
+			}
+		}, "SendImitator").start();
 	}
 
 }// class MainActivity

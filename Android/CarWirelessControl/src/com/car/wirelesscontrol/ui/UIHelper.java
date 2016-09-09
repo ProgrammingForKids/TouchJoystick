@@ -23,6 +23,7 @@ public class UIHelper implements Eraser.Callback
 {
 	private final int	SB_START		= R.drawable.start;
 	private final int	SB_STOP			= R.drawable.stop;
+
 	ImageHelper			_performed		= new ImageHelper();
 	ImageSelected		_imgselected	= null;
 	TextView			_prompt			= null;
@@ -31,8 +32,9 @@ public class UIHelper implements Eraser.Callback
 	LinearLayout		_area_tools		= null;
 	LinearLayout		_current_area	= null;
 	private FlowLayout	_command_aria	= null;
-	private boolean		_PerformMode	= false;
-	final Activity		activity;
+	private boolean		_performMode	= false;
+	final Activity		_activity;
+	final Chunkof		Chunk;
 
 	public interface Callback
 	{
@@ -45,18 +47,19 @@ public class UIHelper implements Eraser.Callback
 
 	void PerformMode(boolean b)
 	{
-		_PerformMode = b;
+		_performMode = b;
 	}
 
 	boolean PerformMode()
 	{
-		return _PerformMode;
+		return _performMode;
 	}
 
 	public UIHelper(Activity activity, Callback callback)
 	{
 		mCallback = callback;
-		this.activity = activity;
+		Chunk = new Chunkof();
+		_activity = activity;
 		_imgselected = new ImageSelected(activity);
 		_eraser = new Eraser(activity, _imgselected);
 		_eraser.registerCallBack(this);
@@ -116,7 +119,7 @@ public class UIHelper implements Eraser.Callback
 															@Override
 															public void onClick(View v)
 															{
-																if (_PerformMode)
+																if (_performMode)
 																{
 																	return;
 																}
@@ -149,7 +152,7 @@ public class UIHelper implements Eraser.Callback
 															@Override
 															public void onClick(View v)
 															{
-																if (_PerformMode)
+																if (_performMode)
 																{
 																	return;
 																}
@@ -174,7 +177,7 @@ public class UIHelper implements Eraser.Callback
 															@Override
 															public boolean onLongClick(View v)
 															{
-																if (_PerformMode)
+																if (_performMode)
 																{
 																	return true;
 																}
@@ -203,7 +206,7 @@ public class UIHelper implements Eraser.Callback
 																	case DragEvent.ACTION_DROP:
 																		break;
 																	case DragEvent.ACTION_DRAG_ENDED:
-																		if (!_PerformMode)
+																		if (!_performMode)
 																		{
 																			View view = (View) event.getLocalState();
 																			_command_aria.removeView(view);
@@ -223,28 +226,35 @@ public class UIHelper implements Eraser.Callback
 
 	char OpcodeToDo()
 	{
+		return Select().OpcodeCurrent();
+	}
+
+	UIHelper Select()
+	{
 		if (!IsSelected())
 		{
-
 			if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
 			{
 				_performed.view = _command_aria.getChildAt(_performed.index);
 				++_performed.index;
 				_performed.Select();
-				return OpcodeCurrent();
 			}
 		}
-		return 0;
+		return this;
 	}
 
 	char OpcodeCurrent()
 	{
-		return OpCode.OpcodeC(_performed.Opcode());
+		if (null != _performed)
+		{
+			return OpCode.OpcodeC(_performed.Opcode());
+		}
+		return 0;
 	}
 
 	void PreparationForStart()
 	{
-		_performed.RestoreImage(this.activity);
+		_performed.RestoreImage(this._activity);
 		_performed.index = 0;
 	}
 
@@ -271,7 +281,7 @@ public class UIHelper implements Eraser.Callback
 	{
 		if (IsPerformedValid())
 		{
-			_performed.SetImage(this.activity, R.drawable.x);
+			_performed.SetImage(this._activity, R.drawable.x);
 		}
 	}
 
@@ -279,20 +289,20 @@ public class UIHelper implements Eraser.Callback
 	{
 		if (IsPerformedValid())
 		{
-			_performed.SetImage(this.activity, R.drawable.o);
+			_performed.SetImage(this._activity, R.drawable.o);
 		}
 	}
 
 	public void StartBntToStop()
 	{
 		_startBnt.setId(SB_STOP);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, SB_STOP));
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(this._activity, SB_STOP));
 	}
 
 	public void StartBntToStart()
 	{
 		_startBnt.setId(SB_START);
-		_startBnt.setImageDrawable(ContextCompat.getDrawable(this.activity, SB_START));
+		_startBnt.setImageDrawable(ContextCompat.getDrawable(this._activity, SB_START));
 	}
 
 	boolean IsSelected()
@@ -333,7 +343,7 @@ public class UIHelper implements Eraser.Callback
 
 	private ImageView ImageToCommandArea(int id)
 	{
-		ImageView iv = ImageHelper.CreateImage(activity, id);
+		ImageView iv = ImageHelper.CreateImage(_activity, id);
 		if (null != iv)
 		{
 			iv.setOnClickListener(_OnClickSelectInsert);
@@ -387,5 +397,72 @@ public class UIHelper implements Eraser.Callback
 	{
 		IsCommandStringChanged();
 	}
+
+	class Chunkof
+	{
+		final int	MaxBufferSize	= 4;
+		private int	_pos			= 0;
+		private int	_curr			= 0;
+		private int	_childCount		= 0;
+
+		public Chunkof()
+		{
+		}
+
+		boolean IsNeedNext()
+		{
+			_curr += 1;
+			if (0 == _pos - _curr)
+			{
+				return true;
+			}
+			return false;
+		}
+
+		void Init()
+		{
+			_curr = 0;
+			_pos = 0;
+			_childCount = _command_aria.getChildCount();
+		}
+
+		String GetChunk(int start, int number)
+		{
+
+			String ret = "";
+			if (_childCount <= start)
+			{
+				return ret;
+			}
+			int nCount = (start + number);
+			if (nCount > _childCount)
+			{
+				nCount = _childCount;
+			}
+
+			for (int k = start; k < nCount; ++k)
+			{
+				View v = _command_aria.getChildAt(k);
+				char c = OpCode.OpcodeC(v.getId());
+				ret += c;
+			}
+			_pos += ret.length();
+			return ret;
+		}
+
+		String GetFirst()
+		{
+			return GetChunk(0, MaxBufferSize);
+		}
+
+		String GetNext()
+		{
+			if (_pos >= _childCount)
+			{
+				return "";
+			}
+			return GetChunk(_pos, MaxBufferSize - 1);
+		}
+	}// class Chunkof
 
 }// class UIHelper
