@@ -15,17 +15,24 @@ public class SoundHelper
 {
 	private SoundPool		mSoundPool;
 	private AssetManager	mAssetManager;
+	private int				mStreamID	= 0;
 	private int				mDing;
 	private int				mHorn;
-	private int				mStreamID;
+	private int				mCrush;
 
 	public void PlayDing()
 	{
 		mStreamID = playSound(mDing);
 	}
+
 	public void PlayHorn()
 	{
 		mStreamID = playSound(mHorn);
+	}
+
+	public void PlayCrush()
+	{
+		mStreamID = playSound(mCrush);
 	}
 
 	public void Stop()
@@ -54,6 +61,7 @@ public class SoundHelper
 		mAssetManager = context.getAssets();
 		mDing = loadSound("ding.ogg");
 		mHorn = loadSound("vwhorn.mp3");
+		mCrush = loadSound("crush");
 	}
 
 	public void CreateSoundPool()

@@ -31,6 +31,7 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
+	private boolean				__SIMULATOR__			= true;
 	private BlueToothHelper		_bth					= null;
 	private UIHelper			_ui						= null;
 	private BroadcastReceiver	_mreceiver				= null;
@@ -204,66 +205,34 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		return super.onOptionsItemSelected(item);
 	}
 
-	private void StartPerform()
-	{
-		//_sound.PlayDing();
-		_sound.PlayHorn();
-		_ui.PerformMode(true);
-		_ui.StartBntToStop();
-		_ui.PreparationForStart();
-		_ui.Chunk.Init();
-		SendImitator();
-		Performing();
-	}
-
 	private void StopPerform()
 	{
 		_ui.PerformMode(false);
 		_ui.StartBntToStart();
 	}
 
-	void Performing()
-	{
-		if (!_ui.PerformMode())
-		{
-			return;
-		}
-		String pkg = _ui.Chunk.GetFirst();
-		SendImitator(pkg);
-		// _bth.Send(pkg);
-		_ui.OpcodeToDo();
-	}
-
-	void Performing_one_to_one()
-	{
-		if (!_ui.PerformMode())
-		{
-			return;
-		}
-		char opcode = _ui.OpcodeToDo();
-		if (0 == opcode)
-		{
-			StopPerform();
-		}
-		else
-		{
-			_bth.Send(opcode);
-		}
-	}
-
 	private void ResposeToUiThread(char c)
 	{
 		char cd = _ui.Unselect().OpcodeCurrent();
 		_ui.Select();
+		Logger.Log.e("KOKA", c, cd);
 		if ((cd - c) == ('a' - 'A'))
 		{
-			Logger.Log.e("KOKA", c, cd);
 			if (_ui.Chunk.IsNeedNext())
 			{
-				String buf = _ui.Chunk.GetNext();
-				SendImitator(buf);
-				return;
+				String pkg = _ui.Chunk.GetNext();
+
+				if (__SIMULATOR__)
+				{
+					SendImitator(pkg);
+				}
+				else
+				{
+					_bth.Send(pkg);
+				}
+
 			}
+			return;
 		}
 		_ui.Unselect();
 		StopPerform();
@@ -271,10 +240,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			case STOP_PERFORMANCE:
 			{
+				_sound.PlayDing();
 				break;
 			}
 			case STOP_OBSTACLE:
 			{
+				_sound.PlayHorn();
 				_ui.PerformObstacle();
 				break;
 			}
@@ -286,6 +257,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			}
 			default:
 			{
+				_sound.PlayCrush();
 				_ui.PerformError();
 			}
 
@@ -296,9 +268,26 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void onStartPerform()
 	{
-		// if (_bth.isConnected()) sasa
+		if (_bth.isConnected() || __SIMULATOR__)
 		{
-			StartPerform();
+			_sound.PlayDing();
+			// _sound.PlayHorn();
+
+			_ui.PerformMode(true);
+			_ui.StartBntToStop();
+			_ui.PreparationForStart();
+			_ui.Chunk.Init();
+			_ui.Select();
+			String pkg = _ui.Chunk.GetFirst();
+			if (__SIMULATOR__)
+			{
+				SendImitator();
+				SendImitator(pkg);
+			}
+			else
+			{
+				_bth.Send(pkg);
+			}
 		}
 	}
 
@@ -316,7 +305,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			public void run()
 			{
-				// ResposeToUiThread(c);
 				ResposeToUiThread(c);
 			}
 		});
@@ -417,6 +405,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			bPause = true;
 		}
+
 	}// class Heartbeat
 
 	@Override
