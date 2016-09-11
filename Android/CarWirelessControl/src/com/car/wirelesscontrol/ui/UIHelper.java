@@ -419,6 +419,11 @@ public class UIHelper implements Eraser.Callback
 			return false;
 		}
 
+		boolean IsStop()
+		{
+			return _childCount == _curr;
+		}
+
 		void Init()
 		{
 			_curr = 0;

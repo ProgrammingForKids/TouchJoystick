@@ -220,6 +220,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			if (_ui.Chunk.IsNeedNext())
 			{
+				Logger.Log.e("KOKA", c, cd, "NEED");
 				String pkg = _ui.Chunk.GetNext();
 
 				if (__SIMULATOR__)
@@ -232,7 +233,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 				}
 
 			}
-			return;
+			if (_ui.Chunk.IsStop())
+			{
+				c = STOP_PERFORMANCE;
+			}
+			else
+			{
+				return;
+			}
 		}
 		_ui.Unselect();
 		StopPerform();
@@ -451,8 +459,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					}
 					if (0 == cmd.size())
 					{
-						BluetoothResponse(STOP_PERFORMANCE);
-						Logger.Log.e("KOKA", "STOP");
+//						BluetoothResponse(STOP_PERFORMANCE);
+//						Logger.Log.e("KOKA", "STOP");
 						break;
 					}
 					char c = cmd.pop();
