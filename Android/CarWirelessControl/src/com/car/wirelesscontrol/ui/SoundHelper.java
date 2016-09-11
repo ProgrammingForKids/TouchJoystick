@@ -61,7 +61,7 @@ public class SoundHelper
 		mAssetManager = context.getAssets();
 		mDing = loadSound("ding.ogg");
 		mHorn = loadSound("vwhorn.mp3");
-		mCrush = loadSound("crush");
+		mCrush = loadSound("crush.ogg");
 	}
 
 	public void CreateSoundPool()

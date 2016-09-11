@@ -21,20 +21,20 @@ import android.widget.TextView;
 
 public class UIHelper implements Eraser.Callback
 {
-	private final int	SB_START		= R.drawable.start;
-	private final int	SB_STOP			= R.drawable.stop;
+	private final int		SB_START		= R.drawable.start;
+	private final int		SB_STOP			= R.drawable.stop;
 
-	ImageHelper			_performed		= new ImageHelper();
-	ImageSelected		_imgselected	= null;
-	TextView			_prompt			= null;
-	ImageView			_startBnt		= null;
-	Eraser				_eraser			= null;
-	LinearLayout		_area_tools		= null;
-	LinearLayout		_current_area	= null;
-	private FlowLayout	_command_aria	= null;
-	private boolean		_performMode	= false;
-	final Activity		_activity;
-	final Chunkof		Chunk;
+	ImageHelper				_performed		= new ImageHelper();
+	ImageSelected			_imgselected	= null;
+	TextView				_prompt			= null;
+	ImageView				_startBnt		= null;
+	Eraser					_eraser			= null;
+	LinearLayout			_area_tools		= null;
+	LinearLayout			_current_area	= null;
+	private FlowLayout		_command_aria	= null;
+	private boolean			_performMode	= false;
+	final Activity			_activity;
+	private final Chunkof	Chunk;
 
 	public interface Callback
 	{
@@ -398,6 +398,38 @@ public class UIHelper implements Eraser.Callback
 		IsCommandStringChanged();
 	}
 
+	// ------------------------------------------------------------------
+	// class Chunkof
+	// ------------------------------------------------------------------
+	public String GetFirstCommandChunk()
+	{
+		Chunk.Init();
+		return Chunk.GetFirst();
+	}
+
+	public String GetNextCommandChunk()
+	{
+		return Chunk.GetNext();
+	}
+
+	static final int	YES		= 1;
+	static final int	NO		= YES + 1;
+	static final int	STOP	= YES + 2;
+
+	public int AskNextCommandChunk()
+	{
+		Chunk.IncrementPosition();
+		if (Chunk.IsStop())
+		{
+			return STOP;
+		}
+		if (Chunk.IsNeedNext())
+		{
+			return YES;
+		}
+		return NO;
+	}
+
 	class Chunkof
 	{
 		final int	MaxBufferSize	= 4;
@@ -409,9 +441,13 @@ public class UIHelper implements Eraser.Callback
 		{
 		}
 
-		boolean IsNeedNext()
+		void IncrementPosition()
 		{
 			_curr += 1;
+		}
+
+		boolean IsNeedNext()
+		{
 			if (0 == _pos - _curr)
 			{
 				return true;

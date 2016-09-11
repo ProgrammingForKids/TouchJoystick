@@ -14,7 +14,7 @@ public class BluetoothConnectedThread extends Thread
 {
 	private static final UUID	MY_UUID				= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final static int			RECIEVE_MESSAGE		= 1;
-	static final String			DefaultDeviceName		= "Unknown";
+	static final String			DefaultDeviceName	= "Unknown";
 	private BluetoothAdapter	mmBluetoothAdapter	= null;
 	private BluetoothDevice		mmBluetoothDevice	= null;
 	private BluetoothSocket		mmSocket			= null;
@@ -28,6 +28,7 @@ public class BluetoothConnectedThread extends Thread
 		final char	SOCKET_CLOSED		= 'Z';
 		final char	STOP_PERFORMANCE	= 'S';
 		final char	STOP_OBSTACLE		= 'O';
+		final char	PERFORM_ERROR		= 'E';
 
 		void BluetoothRespose(char c);
 	}

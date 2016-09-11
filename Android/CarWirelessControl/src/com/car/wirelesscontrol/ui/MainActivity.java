@@ -32,23 +32,22 @@ import android.widget.AdapterView.OnItemClickListener;
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
 	private boolean				__SIMULATOR__			= true;
-	private BlueToothHelper		_bth					= null;
-	private UIHelper			_ui						= null;
-	private BroadcastReceiver	_mreceiver				= null;
+	private BlueToothHelper		m_bth					= null;
+	private UIHelper			m_ui						= null;
+	private BroadcastReceiver	m_receiver				= null;
 	// private Heartbeat _hbeat = new Heartbeat();
 	private boolean				_is_discovery_finished	= false;
 	private MenuItem			_menuitem_devicelist	= null;
-	private SoundHelper			_sound					= new SoundHelper();
+	private SoundHelper			m_sound					= new SoundHelper();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		_bth = new BlueToothHelper(this, this);
-		_ui = new UIHelper(this, this);
-
-		_mreceiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
+		m_bth = new BlueToothHelper(this, this);
+		m_ui = new UIHelper(this, this);
+		m_receiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
 		{
 			public void onReceive(Context context, Intent intent)
 			{
@@ -65,23 +64,23 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					if (_is_discovery_finished)
 					{
 						_is_discovery_finished = false;
-						_bth.FoundDeviceList().clear();
+						m_bth.FoundDeviceList().clear();
 					}
 					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 					if (null != device)
 					{
 
-						_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+						m_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
 					}
 				}
 				if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
 				{
-					int size = _bth.FoundDeviceList().size();
+					int size = m_bth.FoundDeviceList().size();
 					Logger.Log.t("BroadcastReceiver", "List", size);
 					_is_discovery_finished = true;
 					if (1 > size)
 					{
-						_bth.FoundDeviceList().add("Found Device List is empty");
+						m_bth.FoundDeviceList().add("Found Device List is empty");
 					}
 					if (null != _menuitem_devicelist)
 					{
@@ -91,21 +90,21 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			}
 		};
 		IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-		registerReceiver(_mreceiver, filter);
+		registerReceiver(m_receiver, filter);
 		filter = new IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-		registerReceiver(_mreceiver, filter);
+		registerReceiver(m_receiver, filter);
 	}// onCreate
 
 	@Override
 	public void onResume()
 	{
 		super.onResume();
-		_sound.Create(this);
-		if (null != _bth)
+		m_sound.Create(this);
+		if (null != m_bth)
 		{
-			if (!_bth.isConnected())
+			if (!m_bth.isConnected())
 			{
-				_bth.StartDiscovery();
+				m_bth.StartDiscovery();
 				if (null != _menuitem_devicelist)
 				{
 					_menuitem_devicelist.setEnabled(false);
@@ -118,7 +117,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	protected void onPause()
 	{
 		super.onPause();
-		_sound.Release();
+		m_sound.Release();
 	}
 
 	@Override
@@ -131,18 +130,18 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	protected void onDestroy()
 	{
 		super.onDestroy();
-		_bth.Finalize();
-		if (null != _mreceiver)
+		m_bth.Finalize();
+		if (null != m_receiver)
 		{
-			unregisterReceiver(_mreceiver);
+			unregisterReceiver(m_receiver);
 		}
 	}
 
 	private void BTConnect()
 	{
-		_bth.IsBondedDevice();
-		ShowDevices(_bth.DevicesList());
-		_bth.isConnected();
+		m_bth.IsBondedDevice();
+		ShowDevices(m_bth.DevicesList());
+		m_bth.isConnected();
 	}
 
 	@Override
@@ -150,7 +149,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		_ui.SetMenuItem(menu.findItem(R.id.action_current));
+		m_ui.SetMenuItem(menu.findItem(R.id.action_current));
 		_menuitem_devicelist = menu.findItem(R.id.action_devices_list);
 		if (null != _menuitem_devicelist)
 		{
@@ -189,17 +188,17 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		else if (id == R.id.action_load_file)
 		{
 			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_LOAD_FILE);
-			dlg.ShowDialog(this, _ui);
+			dlg.ShowDialog(this, m_ui);
 		}
 		else if (id == R.id.action_save_file)
 		{
 			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_SAVE_FILE);
-			dlg.ShowDialog(this, _ui);
+			dlg.ShowDialog(this, m_ui);
 
 		}
 		else if (id == R.id.action_devices_list)
 		{
-			ShowDevices(_bth.FoundDeviceList());
+			ShowDevices(m_bth.FoundDeviceList());
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -207,66 +206,59 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	private void StopPerform()
 	{
-		_ui.PerformMode(false);
-		_ui.StartBntToStart();
+		m_ui.PerformMode(false);
+		m_ui.StartBntToStart();
 	}
 
 	private void ResposeToUiThread(char c)
 	{
-		char cd = _ui.Unselect().OpcodeCurrent();
-		_ui.Select();
+		char cd = m_ui.Unselect().OpcodeCurrent();
+		m_ui.Select();
 		Logger.Log.e("KOKA", c, cd);
 		if ((cd - c) == ('a' - 'A'))
 		{
-			if (_ui.Chunk.IsNeedNext())
+			int next = m_ui.AskNextCommandChunk();
+			switch (next)
 			{
-				Logger.Log.e("KOKA", c, cd, "NEED");
-				String pkg = _ui.Chunk.GetNext();
-
-				if (__SIMULATOR__)
-				{
-					SendImitator(pkg);
-				}
-				else
-				{
-					_bth.Send(pkg);
-				}
-
-			}
-			if (_ui.Chunk.IsStop())
-			{
-				c = STOP_PERFORMANCE;
-			}
-			else
-			{
-				return;
+				case UIHelper.YES:
+					Logger.Log.e("KOKA", "NEED");
+					String pkg = m_ui.GetNextCommandChunk();
+					SendComandPkg(pkg);
+					return;
+				case UIHelper.NO:
+					return;
+				case UIHelper.STOP:
+					c = STOP_PERFORMANCE;
+					break;
+				default:
+					break;
 			}
 		}
-		_ui.Unselect();
+		m_ui.Unselect();
 		StopPerform();
 		switch (c)
 		{
 			case STOP_PERFORMANCE:
 			{
-				_sound.PlayDing();
+				m_sound.PlayDing();
 				break;
 			}
 			case STOP_OBSTACLE:
 			{
-				_sound.PlayHorn();
-				_ui.PerformObstacle();
+				m_sound.PlayHorn();
+				m_ui.PerformObstacle();
 				break;
 			}
 			case SOCKET_CLOSED:
 			case CONNECT_ERROR:
 			{
-				_bth.SetLED(false);
+				m_bth.SetLED(false);
 				break;
 			}
 			default:
 			{
-				_sound.PlayCrush();
-				_ui.PerformError();
+				m_sound.PlayCrush();
+				m_ui.PerformError();
 			}
 
 		}
@@ -276,26 +268,36 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void onStartPerform()
 	{
-		if (_bth.isConnected() || __SIMULATOR__)
+		if (m_bth.isConnected() || __SIMULATOR__)
 		{
-			_sound.PlayDing();
-			// _sound.PlayHorn();
-
-			_ui.PerformMode(true);
-			_ui.StartBntToStop();
-			_ui.PreparationForStart();
-			_ui.Chunk.Init();
-			_ui.Select();
-			String pkg = _ui.Chunk.GetFirst();
+			m_ui.PerformMode(true);
+			m_ui.StartBntToStop();
+			m_ui.PreparationForStart();
+			m_ui.Select();
+			String pkg = m_ui.GetFirstCommandChunk();
+			if(pkg.length() == 0)
+			{
+				BluetoothResponse(PERFORM_ERROR);
+				return;
+			}
+			m_sound.PlayDing();
 			if (__SIMULATOR__)
 			{
 				SendImitator();
-				SendImitator(pkg);
 			}
-			else
-			{
-				_bth.Send(pkg);
-			}
+			SendComandPkg(pkg);
+		}
+	}
+
+	void SendComandPkg(final String pkg)
+	{
+		if (__SIMULATOR__)
+		{
+			SendImitator(pkg);
+		}
+		else
+		{
+			m_bth.Send(pkg);
 		}
 	}
 
@@ -320,7 +322,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	void ShowDevices(final ArrayList<String> list)
 	{
-		if (null == _bth)
+		if (null == m_bth)
 		{
 			return;
 		}
@@ -341,7 +343,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					if (null != tv)
 					{
 						String item = tv.getText().toString();
-						_bth.ConnectToBTDevice(item);
+						m_bth.ConnectToBTDevice(item);
 						dialog.dismiss();
 					}
 
@@ -386,9 +388,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 												Thread.sleep(2000);
 												if (!bPause)
 												{
-													if (!_ui.PerformMode())
+													if (!m_ui.PerformMode())
 													{
-														_bth.Send('h');
+														m_bth.Send('h');
 													}
 												}
 											}
@@ -429,6 +431,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		// }
 	}
 
+	// Simulator Part
 	Stack<Character> cmd = new Stack<Character>();
 
 	void SendImitator(String buf)
@@ -459,8 +462,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					}
 					if (0 == cmd.size())
 					{
-//						BluetoothResponse(STOP_PERFORMANCE);
-//						Logger.Log.e("KOKA", "STOP");
+						// BluetoothResponse(STOP_PERFORMANCE);
+						// Logger.Log.e("KOKA", "STOP");
 						break;
 					}
 					char c = cmd.pop();
