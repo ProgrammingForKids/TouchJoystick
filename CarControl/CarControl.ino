@@ -70,9 +70,9 @@ void setup()
 }
 
 static const unsigned long RunningTime = 500;
-static const unsigned long RotationTime = 150;
+static const unsigned long RotationTime = 120;
 static const unsigned long WheelsSpeedStepTime = 50;
-static const unsigned long pauseBetweenDirectionChanges = 500;
+static const unsigned long pauseBetweenDirectionChanges = 300;
 
 bool ProbeOutlook()
 {
@@ -140,14 +140,35 @@ struct RightTraits : public TurnTraits
 template <typename Traits>
 struct MoveOp
 {
-  void operator()()
+  void operator()(bool bNewCommand)
   {
-    if (wheelsConstrain.check())
+    if (bNewCommand)
+    {
+      wheelsConstrain.set(0);
+    }
+    
+    if (bNewCommand || wheelsConstrain.check())
     {
       const auto wheelsState = Traits::WheelsMotion(wheels);
-      if (bIdle && (wheelsState == Wheels::STARTING))
+      if (wheelsState == Wheels::STARTING)
       {
-        actionConstrain.set(Traits::ActionTime());
+        if (bIdle)
+        {
+          // Going from Idle to Starting triggers action timer
+          actionConstrain.set(Traits::ActionTime());
+        }
+      }
+
+        // New action timer is set when the state goes from STOPPED to STARTING,
+        // hence during the STOPPING phase the actionConstrain is still expired
+        // after the previous operation. We have to prevent another read from BT
+        // until the STARTING begins.
+      if ((wheelsState == Wheels::STOPPING)
+          ||
+          ( ( ! bIdle ) && (wheelsState == Wheels::STOPPED) )
+          )
+      {
+        actionConstrain.set(max(Traits::ActionTime(), WheelsSpeedStepTime));
       }
       
       bIdle = false;
@@ -160,6 +181,7 @@ struct MoveOp
       else if (wheelsState == Wheels::STOPPED)
       {
         wheelsConstrain.set(pauseBetweenDirectionChanges);
+        actionConstrain.set(max(Traits::ActionTime(),pauseBetweenDirectionChanges));
         bIdle = true;
       }
       else
@@ -178,12 +200,15 @@ void loop()
     Log("Stopping before obstacle");
     return;
   }
+
+  bool bNewCommand = false;
   
-  if ( ongoingOp == '\0' && actionConstrain.check() )
+  if ( actionConstrain.check() )
   {
     if (reply != '\0')
     {
       BT.print(reply);
+      Log("Reply ")(reply);
       reply = '\0';
     }
 
@@ -192,12 +217,12 @@ void loop()
       ongoingOp = BT.read();
       reply = ongoingOp + 'A' - 'a';
       Log("Fetched command ")(ongoingOp);
+      bNewCommand = true;
     }
-    else if (! bIdle)
+    else if ((! bIdle) && (ongoingOp != 's'))
     {
       Log("No command received, stopping");
       ongoingOp = 's';
-      reply = 'S';
     }
   }
 
@@ -209,22 +234,22 @@ void loop()
     {
       return;
     }
-    MoveOp<ForwardTraits>()();
+    MoveOp<ForwardTraits>()(bNewCommand);
     break;
 
   case 'b':
     bOutlookRequired = false;
-    MoveOp<BackTraits>()();
+    MoveOp<BackTraits>()(bNewCommand);
     break;
 
   case 'l':
     bOutlookRequired = false;
-    MoveOp<LeftTraits>()();
+    MoveOp<LeftTraits>()(bNewCommand);
     break;
 
   case 'r':
     bOutlookRequired = false;
-    MoveOp<RightTraits>()();
+    MoveOp<RightTraits>()(bNewCommand);
     break;
     
   case 's':
@@ -233,6 +258,7 @@ void loop()
       if (wheels.Stop() == Wheels::DONE)
       {
         ongoingOp = '\0';
+        reply = 'S';
         bIdle  = true;
         bOutlookRequired = false;
         Log("Accomplished Stop");
