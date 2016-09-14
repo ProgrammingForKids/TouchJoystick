@@ -31,14 +31,12 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
-	private boolean				__SIMULATOR__			= true;
-	private BlueToothHelper		m_bth					= null;
-	private UIHelper			m_ui						= null;
-	private BroadcastReceiver	m_receiver				= null;
+	private boolean				__SIMULATOR__	= true;
+	private BlueToothHelper		m_bth			= null;
+	private UIHelper			m_ui			= null;
+	private BroadcastReceiver	m_receiver		= null;
 	// private Heartbeat _hbeat = new Heartbeat();
-	private boolean				_is_discovery_finished	= false;
-	private MenuItem			_menuitem_devicelist	= null;
-	private SoundHelper			m_sound					= new SoundHelper();
+	private SoundHelper			m_sound			= new SoundHelper();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -57,35 +55,24 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 				if (BluetoothDevice.ACTION_FOUND.equals(action))
 				{
 					// Get the BluetoothDevice object from the Intent
-					if (null != _menuitem_devicelist)
-					{
-						_menuitem_devicelist.setEnabled(false);
-					}
-					if (_is_discovery_finished)
-					{
-						_is_discovery_finished = false;
-						m_bth.FoundDeviceList().clear();
-					}
 					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 					if (null != device)
 					{
-
-						m_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+						if (m_bth.IsOurClass(device.getBluetoothClass()))
+						{
+							m_bth.FoundDeviceList().add(device.getName() + "@" + device.getAddress());
+						}
 					}
 				}
 				if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action))
 				{
 					int size = m_bth.FoundDeviceList().size();
 					Logger.Log.t("BroadcastReceiver", "List", size);
-					_is_discovery_finished = true;
 					if (1 > size)
 					{
 						m_bth.FoundDeviceList().add("Found Device List is empty");
 					}
-					if (null != _menuitem_devicelist)
-					{
-						_menuitem_devicelist.setEnabled(true);
-					}
+					ShowDevices(m_bth.FoundDeviceList());
 				}
 			}
 		};
@@ -102,13 +89,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		m_sound.Create(this);
 		if (null != m_bth)
 		{
-			if (!m_bth.isConnected())
+			if (!m_bth.IsConnected())
 			{
-				m_bth.StartDiscovery();
-				if (null != _menuitem_devicelist)
-				{
-					_menuitem_devicelist.setEnabled(false);
-				}
+				m_bth.TryToConnect();
 			}
 		}
 	}
@@ -137,11 +120,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		}
 	}
 
-	private void BTConnect()
+	private void ShowBondedDeviceList()
 	{
-		m_bth.IsBondedDevice();
+		m_bth.BondedDeviceList();
 		ShowDevices(m_bth.DevicesList());
-		m_bth.isConnected();
 	}
 
 	@Override
@@ -150,11 +132,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		m_ui.SetMenuItem(menu.findItem(R.id.action_current));
-		_menuitem_devicelist = menu.findItem(R.id.action_devices_list);
-		if (null != _menuitem_devicelist)
-		{
-			_menuitem_devicelist.setEnabled(false);
-		}
 		if (menu.getClass().getSimpleName().equals("MenuBuilder"))
 		{
 			try
@@ -183,7 +160,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		int id = item.getItemId();
 		if (id == R.id.action_settings)
 		{
-			BTConnect();
+			ShowBondedDeviceList();
 		}
 		else if (id == R.id.action_load_file)
 		{
@@ -198,7 +175,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		}
 		else if (id == R.id.action_devices_list)
 		{
-			ShowDevices(m_bth.FoundDeviceList());
+			m_bth.FoundDeviceList().clear();
+			m_bth.StartDiscovery();
+			// m_bth.IsConnected();
+			// ShowDevices(m_bth.FoundDeviceList());
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -252,7 +232,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			case SOCKET_CLOSED:
 			case CONNECT_ERROR:
 			{
-				m_bth.SetLED(false);
+				m_bth.ShowConnectStatus(false);
 				break;
 			}
 			default:
@@ -268,14 +248,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	@Override
 	public void onStartPerform()
 	{
-		if (m_bth.isConnected() || __SIMULATOR__)
+		if (m_bth.IsConnected() || __SIMULATOR__)
 		{
 			m_ui.PerformMode(true);
 			m_ui.StartBntToStop();
 			m_ui.PreparationForStart();
 			m_ui.Select();
 			String pkg = m_ui.GetFirstCommandChunk();
-			if(pkg.length() == 0)
+			if (pkg.length() == 0)
 			{
 				BluetoothResponse(PERFORM_ERROR);
 				return;
@@ -343,7 +323,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					if (null != tv)
 					{
 						String item = tv.getText().toString();
-						m_bth.ConnectToBTDevice(item);
+						m_bth.ConnectToBluetothDevice(item);
 						dialog.dismiss();
 					}
 

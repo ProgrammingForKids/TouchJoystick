@@ -1,0 +1,36 @@
+
+	// void BluetoothStatus()
+	// {
+	// String status;
+	// if (_bluetoothAdapter.isEnabled())
+	// {
+	// String mydeviceaddress = _bluetoothAdapter.getAddress();
+	// String mydevicename = _bluetoothAdapter.getName();
+	// int state = _bluetoothAdapter.getState();
+	// status = mydevicename + " : " + mydeviceaddress + " : " + State(state);
+	// }
+	// else
+	// {
+	// status = "Bluetooth Off";
+	// }
+	// Logger.Log.t("BluetoothStatus", status);
+	// }
+
+
+	// String State(int s)
+	// {
+	// switch (s)
+	// {
+	// case BluetoothAdapter.STATE_ON:
+	// return "On";
+	// case BluetoothAdapter.STATE_TURNING_ON:
+	// return "Turning On";
+	// case BluetoothAdapter.STATE_OFF:
+	// return "Off";
+	// case BluetoothAdapter.STATE_TURNING_OFF:
+	// return "Turning Off";
+	// default:
+	// break;
+	// }
+	// return "";
+	// }

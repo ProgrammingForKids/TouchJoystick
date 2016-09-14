@@ -52,6 +52,7 @@ public class BluetoothConnectedThread extends Thread
 
 	boolean Init(BluetoothAdapter bluetoothAdapter, final String mac)
 	{
+		Logger.Log.e("Init");
 		ResetConnection();
 		if (null == bluetoothAdapter)
 		{
@@ -77,8 +78,12 @@ public class BluetoothConnectedThread extends Thread
 		return (null != mmSocket);
 	}
 
-	private void SocketStreams()
+	private boolean SocketStreams()
 	{
+		if (null == mmSocket)
+		{
+			return false;
+		}
 		InputStream tmpIn = null;
 		OutputStream tmpOut = null;
 		// Get the input and output streams, using temp objects because
@@ -91,31 +96,41 @@ public class BluetoothConnectedThread extends Thread
 		catch (IOException e)
 		{
 			Logger.Log.e("mmSocket.*Stream()", "is failed");
+			return false;
 		}
 		mmInStream = tmpIn;
 		mmOutStream = tmpOut;
+		return (mmInStream != null && mmOutStream != null);
 	}
 
-	private void ConnectSocket()
+	private boolean ConnectSocket()
 	{
+		if(null == mmSocket)
+		{
+			return false;
+		}
 		try
 		{
 			mmSocket.connect();
+			return true;
 		}
 		catch (IOException connectException)
 		{
 			Logger.Log.e("mmSocket.connect()", "is failed");
 			try
 			{
-				mmSocket.close();
+				if(null != mmSocket)
+				{
+					mmSocket.close();
+				}
 			}
 			catch (IOException closeException)
 			{
 				Logger.Log.t("mmSocket.close()", "is failed");
 			}
 			mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
-			return;
 		}
+		return false;
 	}
 
 	@Override
@@ -126,11 +141,19 @@ public class BluetoothConnectedThread extends Thread
 		{
 			mmBluetoothAdapter.cancelDiscovery();
 		}
-		ConnectSocket();
-		SocketStreams();
+		if (!ConnectSocket())
+		{
+			Cancel();
+			return;
+		}
+		if (!SocketStreams())
+		{
+			Cancel();
+			return;
+		}
 		byte[] buffer = new byte[256]; // buffer store for the stream
 		int bytes = 0;
-
+		Logger.Log.t("AUTO","While");
 		// Keep listening to the InputStream until an exception occurs
 		while (true)
 		{
@@ -153,12 +176,12 @@ public class BluetoothConnectedThread extends Thread
 			}
 			catch (IOException e)
 			{
-				Logger.Log.e("Thread END", e.getMessage());
+				Logger.Log.e("AUTO","Thread END", e.getMessage());
 				break;
 			}
 		}
 		mCallback.BluetoothRespose(Callback.SOCKET_CLOSED);
-		Logger.Log.t("Thread END");
+		Logger.Log.t("AUTO","Thread END");
 	}
 
 	private void ResetConnection()

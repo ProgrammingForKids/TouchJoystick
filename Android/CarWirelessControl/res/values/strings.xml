@@ -3,7 +3,7 @@
 
     <string name="app_name">CarWirelessControl</string>
     <!-- menu -->
-    <string name="action_devices_list">Found Device List</string>
+    <string name="action_devices_list">Search Bluetooth Devices</string>
     <string name="action_settings">Settings</string>
     <string name="action_load_file">Load File</string>
     <string name="action_save_file">Save File</string>
