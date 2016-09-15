@@ -31,6 +31,7 @@ public class BluetoothConnectedThread extends Thread
 		final char	PERFORM_ERROR		= 'E';
 
 		void BluetoothRespose(char c);
+		void ShowBluetoothStatus();
 	}
 
 	static private BluetoothConnectedThread.Callback mCallback = null;
@@ -105,32 +106,38 @@ public class BluetoothConnectedThread extends Thread
 
 	private boolean ConnectSocket()
 	{
-		if(null == mmSocket)
+		synchronized (this)
 		{
-			return false;
-		}
-		try
-		{
-			mmSocket.connect();
-			return true;
-		}
-		catch (IOException connectException)
-		{
-			Logger.Log.e("mmSocket.connect()", "is failed");
+
+			if (null == mmSocket)
+			{
+				return false;
+			}
 			try
 			{
-				if(null != mmSocket)
-				{
-					mmSocket.close();
-				}
+				mmSocket.connect();
+				return true;
 			}
-			catch (IOException closeException)
+			catch (IOException connectException)
 			{
-				Logger.Log.t("mmSocket.close()", "is failed");
+				Logger.Log.e("mmSocket.connect()", "is failed");
+				try
+				{
+					if (null != mmSocket)
+					{
+						mmSocket.close();
+					}
+				}
+				catch (IOException closeException)
+				{
+					Logger.Log.t("mmSocket.close()", "is failed");
+				}
+
+				mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
+				mCallback.ShowBluetoothStatus();
 			}
-			mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
+			return false;
 		}
-		return false;
 	}
 
 	@Override
@@ -153,7 +160,8 @@ public class BluetoothConnectedThread extends Thread
 		}
 		byte[] buffer = new byte[256]; // buffer store for the stream
 		int bytes = 0;
-		Logger.Log.t("AUTO","While");
+		Logger.Log.t("Thread", "While", isConnected());
+		mCallback.ShowBluetoothStatus();
 		// Keep listening to the InputStream until an exception occurs
 		while (true)
 		{
@@ -176,15 +184,24 @@ public class BluetoothConnectedThread extends Thread
 			}
 			catch (IOException e)
 			{
-				Logger.Log.e("AUTO","Thread END", e.getMessage());
+				Logger.Log.e("AUTO", "Thread END", e.getMessage());
 				break;
 			}
 		}
 		mCallback.BluetoothRespose(Callback.SOCKET_CLOSED);
-		Logger.Log.t("AUTO","Thread END");
+		mCallback.ShowBluetoothStatus();
+		Logger.Log.t("AUTO", "Thread END");
 	}
 
 	private void ResetConnection()
+	{
+		synchronized (this)
+		{
+			__ResetConnection();
+		}
+	}
+
+	private void __ResetConnection()
 	{
 		if (mmInStream != null)
 		{

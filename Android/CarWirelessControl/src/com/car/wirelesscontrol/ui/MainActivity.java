@@ -31,11 +31,10 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
 {
-	private boolean				__SIMULATOR__	= true;
+	private boolean				__SIMULATOR__	= false;
 	private BlueToothHelper		m_bth			= null;
 	private UIHelper			m_ui			= null;
 	private BroadcastReceiver	m_receiver		= null;
-	// private Heartbeat _hbeat = new Heartbeat();
 	private SoundHelper			m_sound			= new SoundHelper();
 
 	@Override
@@ -89,10 +88,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		m_sound.Create(this);
 		if (null != m_bth)
 		{
-			if (!m_bth.IsConnected())
-			{
-				m_bth.TryToConnect();
-			}
+//			if (!m_bth.IsConnected())
+//			{
+//				m_bth.TryToConnect();
+//			}
 		}
 	}
 
@@ -177,8 +176,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			m_bth.FoundDeviceList().clear();
 			m_bth.StartDiscovery();
-			// m_bth.IsConnected();
-			// ShowDevices(m_bth.FoundDeviceList());
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -201,7 +198,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			switch (next)
 			{
 				case UIHelper.YES:
-					Logger.Log.e("KOKA", "NEED");
 					String pkg = m_ui.GetNextCommandChunk();
 					SendComandPkg(pkg);
 					return;
@@ -348,67 +344,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
-	}
-
-	class Heartbeat
-	{
-
-		private boolean	bPause	= true;
-
-		Thread			mThread	= new Thread(new Runnable()
-								{
-
-									@Override
-									public void run()
-									{
-										while (true)
-										{
-											try
-											{
-												Thread.sleep(2000);
-												if (!bPause)
-												{
-													if (!m_ui.PerformMode())
-													{
-														m_bth.Send('h');
-													}
-												}
-											}
-											catch (InterruptedException e)
-											{
-											}
-										}
-									}
-								}, "Heartbeat");
-
-		public Heartbeat()
-		{
-			mThread.start();
-		}
-
-		void Start()
-		{
-			bPause = false;
-		}
-
-		void Stop()
-		{
-			bPause = true;
-		}
-
-	}// class Heartbeat
-
-	@Override
-	public void HeartbeatStart(boolean b)
-	{
-		// if (b)
-		// {
-		// _hbeat.Start();
-		// }
-		// else
-		// {
-		// _hbeat.Stop();
-		// }
 	}
 
 	// Simulator Part

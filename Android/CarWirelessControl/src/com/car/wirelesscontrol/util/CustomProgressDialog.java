@@ -6,6 +6,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.graphics.drawable.AnimationDrawable;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.widget.ImageView;
 
 public class CustomProgressDialog extends ProgressDialog
@@ -38,7 +39,12 @@ public class CustomProgressDialog extends ProgressDialog
 		la.setBackgroundResource(R.drawable.custom_progress_dialog_animation);
 		animation = (AnimationDrawable) la.getBackground();
 	}
-
+	@Override
+	public boolean onTouchEvent(MotionEvent event)
+	{
+		dismiss();
+		return super.onTouchEvent(event);
+	}
 	@Override
 	public void show()
 	{

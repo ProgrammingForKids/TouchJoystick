@@ -34,3 +34,53 @@
 	// }
 	// return "";
 	// }
+
+	
+	
+		class Heartbeat
+	{
+
+		private boolean	bPause	= true;
+
+		Thread			mThread	= new Thread(new Runnable()
+								{
+
+									@Override
+									public void run()
+									{
+										while (true)
+										{
+											try
+											{
+												Thread.sleep(2000);
+												if (!bPause)
+												{
+													if (!m_ui.PerformMode())
+													{
+														m_bth.Send('h');
+													}
+												}
+											}
+											catch (InterruptedException e)
+											{
+											}
+										}
+									}
+								}, "Heartbeat");
+
+		public Heartbeat()
+		{
+			mThread.start();
+		}
+
+		void Start()
+		{
+			bPause = false;
+		}
+
+		void Stop()
+		{
+			bPause = true;
+		}
+
+	}// class Heartbeat

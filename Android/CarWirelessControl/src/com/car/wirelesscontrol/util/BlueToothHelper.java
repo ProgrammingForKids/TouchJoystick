@@ -39,8 +39,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		final char	PERFORM_ERROR		= BluetoothConnectedThread.Callback.PERFORM_ERROR;
 
 		void BluetoothResponse(char c);
-
-		void HeartbeatStart(boolean ret);
 	}
 
 	private Callback	mCallback;
@@ -71,12 +69,20 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public boolean IsConnected()
 	{
+		if (null != _BluetoothConnectedThread)
+		{
+			return _BluetoothConnectedThread.isConnected();
+		}
+		return false;
+	}
+
+	public boolean ShowConnectStatus()
+	{
 		EndWait();
-		boolean ret = false;
+		boolean ret = IsConnected();
 		String title = "";
 		if (null != _BluetoothConnectedThread)
 		{
-			ret = _BluetoothConnectedThread.isConnected();
 			title = _BluetoothConnectedThread.DeviceName();
 		}
 
@@ -151,7 +157,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public void BondedDeviceList()
 	{
 		checkBTState();
-		if (! (_bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON))
+		if (!(_bluetoothAdapter.getState() == BluetoothAdapter.STATE_ON))
 		{
 			return;
 		}
@@ -181,8 +187,8 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public void ConnectToBluetothDevice(final String name_mac)
 	{
+		BeginWait();
 		ConnectToBTDevice(name_mac);
-		IsConnectedAsync();
 	}
 
 	private boolean ConnectToBTDevice(final String name_mac)
@@ -191,7 +197,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		{
 			return false;
 		}
-		Logger.Log.t("AUTO", name_mac);
 		int pos = name_mac.lastIndexOf("@");
 		if (pos == -1)
 		{
@@ -217,7 +222,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 					{
 						boolean res = InitAndStartBluetoothConnectedThread(mac);
 						Logger.Log.t("AUTO", mac, res);
-
+						IsConnectedAsync();
 					}
 				},
 				5000);
@@ -229,7 +234,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		if (_BluetoothConnectedThread.Init(_bluetoothAdapter, mac))
 		{
 			_BluetoothConnectedThread.start();
-			IsConnectedAsync();
 			return true;
 		}
 		return false;
@@ -242,10 +246,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 				{
 					public void run()
 					{
-						IsConnected();
+						ShowConnectStatus();
 					}
 				},
-				2000);
+				5000);
 	}
 
 	public void Send(final String comm)
@@ -264,7 +268,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	{
 		if (null != _BluetoothConnectedThread)
 		{
-			Logger.Log.t("SEND GET", c);
 			_BluetoothConnectedThread.Send(c);
 		}
 		else
@@ -276,6 +279,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	@Override
 	public void BluetoothRespose(char c)
 	{
+		if(Callback.CONNECT_ERROR == c)
+		{
+			
+		}
 		mCallback.BluetoothResponse(c);
 	}
 
@@ -323,5 +330,18 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 				_dialog.dismiss();
 			}
 		}
+	}
+
+	@Override
+	public void ShowBluetoothStatus()
+	{
+		Logger.Log.t("ShowBluetoothStatus");
+		_activity.runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+				ShowConnectStatus();
+			}
+		});
 	}
 }// class BlueToothHelper
