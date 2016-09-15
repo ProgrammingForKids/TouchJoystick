@@ -42,7 +42,7 @@ public class CustomProgressDialog extends ProgressDialog
 	@Override
 	public boolean onTouchEvent(MotionEvent event)
 	{
-		dismiss();
+		//dismiss();
 		return super.onTouchEvent(event);
 	}
 	@Override

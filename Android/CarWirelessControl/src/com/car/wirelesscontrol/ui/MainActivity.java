@@ -228,7 +228,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			case SOCKET_CLOSED:
 			case CONNECT_ERROR:
 			{
-				m_bth.ShowConnectStatus(false);
 				break;
 			}
 			default:

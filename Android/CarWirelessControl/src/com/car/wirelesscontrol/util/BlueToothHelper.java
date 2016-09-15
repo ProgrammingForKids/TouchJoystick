@@ -3,14 +3,13 @@ package com.car.wirelesscontrol.util;
 import java.util.ArrayList;
 import java.util.Set;
 
-import com.car.programmator.ui.R;
-
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.util.Pair;
 
 public class BlueToothHelper implements BluetoothConnectedThread.Callback
 {
@@ -20,10 +19,11 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	private BluetoothAdapter			_bluetoothAdapter			= null;
 	private BluetoothConnectedThread	_BluetoothConnectedThread	= null;
-	private ArrayList<String>			_bondedDeviceList			= null;
-	private ArrayList<String>			_foundDeviceList			= null;
-	private final Activity				_activity;
 	private ProgressDialog				_dialog						= null;
+	private final ArrayList<String>		_bondedDeviceList;
+	private final ArrayList<String>		_foundDeviceList;
+	private final Activity				_activity;
+	private final ActionBarHelper		_actionbar;
 
 	public ArrayList<String> DevicesList()
 	{
@@ -41,30 +41,19 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		void BluetoothResponse(char c);
 	}
 
-	private Callback	mCallback;
+	private Callback	mCallback		= null;
 	private int			mIndex			= -1;
 	private boolean		mTryToConnect	= false;
 
 	public BlueToothHelper(Activity activity, Callback callback)
 	{
-		this.mCallback = callback;
+		mCallback = callback;
 		_activity = activity;
-		_activity.getActionBar().setTitle(BluetoothConnectedThread.DefaultDeviceName);
 		_bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		_bondedDeviceList = new ArrayList<String>();
 		_foundDeviceList = new ArrayList<String>();
-	}
-
-	public void ShowConnectStatus(boolean bGreen)
-	{
-		int resId = (bGreen) ? R.drawable.green : R.drawable.red;
-		this._activity.getActionBar().setIcon(resId);
-	}
-
-	public void ShowConnectStatus(String title, boolean bGreen)
-	{
-		this._activity.getActionBar().setTitle(title);
-		ShowConnectStatus(bGreen);
+		_actionbar = new ActionBarHelper(_activity);
+		_actionbar.ShowStatus(BluetoothConnectedThread.DefaultDeviceName, false);
 	}
 
 	public boolean IsConnected()
@@ -79,15 +68,15 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public boolean ShowConnectStatus()
 	{
 		EndWait();
-		boolean ret = IsConnected();
-		String title = "";
-		if (null != _BluetoothConnectedThread)
+		if (null == _BluetoothConnectedThread)
 		{
-			title = _BluetoothConnectedThread.DeviceName();
+			_actionbar.ShowStatus(BluetoothConnectedThread.DefaultDeviceName, false);
+			return false;
 		}
 
-		ShowConnectStatus(title, ret);
-		if (!ret)
+		Pair<Boolean, String> p = _BluetoothConnectedThread.IsConnected();
+		_actionbar.ShowStatus(p.second, p.first);
+		if (!p.first)
 		{
 			if (mTryToConnect)
 			{
@@ -100,7 +89,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 			mIndex = -1;
 			mTryToConnect = false;
 		}
-		return ret;
+		return p.first;
 	}
 
 	public void StartDiscovery()
@@ -261,6 +250,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		else
 		{
 			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
+			ShowBluetoothStatus();
 		}
 	}
 
@@ -273,16 +263,13 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		else
 		{
 			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
+			ShowBluetoothStatus();
 		}
 	}
 
 	@Override
 	public void BluetoothRespose(char c)
 	{
-		if(Callback.CONNECT_ERROR == c)
-		{
-			
-		}
 		mCallback.BluetoothResponse(c);
 	}
 
@@ -341,6 +328,18 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 			public void run()
 			{
 				ShowConnectStatus();
+			}
+		});
+	}
+
+	@Override
+	public void ShowBluetoothErrorStatus()
+	{
+		_activity.runOnUiThread(new Runnable()
+		{
+			public void run()
+			{
+				_actionbar.ShowStatus(false);;
 			}
 		});
 	}

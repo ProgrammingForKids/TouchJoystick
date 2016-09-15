@@ -9,6 +9,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.os.Handler;
+import android.util.Pair;
 
 public class BluetoothConnectedThread extends Thread
 {
@@ -31,7 +32,9 @@ public class BluetoothConnectedThread extends Thread
 		final char	PERFORM_ERROR		= 'E';
 
 		void BluetoothRespose(char c);
+
 		void ShowBluetoothStatus();
+		void ShowBluetoothErrorStatus();
 	}
 
 	static private BluetoothConnectedThread.Callback mCallback = null;
@@ -49,6 +52,20 @@ public class BluetoothConnectedThread extends Thread
 		}
 		return DefaultDeviceName;
 
+	}
+
+	public boolean isConnected()
+	{
+		if (null == mmSocket)
+		{
+			return false;
+		}
+		return mmSocket.isConnected();
+	}
+
+	public Pair<Boolean, String> IsConnected()
+	{
+		return new Pair<Boolean, String>(isConnected(), DeviceName());
 	}
 
 	boolean Init(BluetoothAdapter bluetoothAdapter, final String mac)
@@ -134,7 +151,7 @@ public class BluetoothConnectedThread extends Thread
 				}
 
 				mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
-				mCallback.ShowBluetoothStatus();
+				mCallback.ShowBluetoothErrorStatus();
 			}
 			return false;
 		}
@@ -189,7 +206,7 @@ public class BluetoothConnectedThread extends Thread
 			}
 		}
 		mCallback.BluetoothRespose(Callback.SOCKET_CLOSED);
-		mCallback.ShowBluetoothStatus();
+		mCallback.ShowBluetoothErrorStatus();
 		Logger.Log.t("AUTO", "Thread END");
 	}
 
@@ -239,15 +256,6 @@ public class BluetoothConnectedThread extends Thread
 			mmSocket = null;
 		}
 		mmBluetoothDevice = null;
-	}
-
-	public boolean isConnected()
-	{
-		if (null == mmSocket)
-		{
-			return false;
-		}
-		return mmSocket.isConnected();
 	}
 
 	/* Call this from the main activity to send data to the remote device */
