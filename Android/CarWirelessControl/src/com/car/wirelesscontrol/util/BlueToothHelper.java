@@ -70,6 +70,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		EndWait();
 		if (null == _BluetoothConnectedThread)
 		{
+			Logger.Log.t("BluetoothConnectedThread==null");
 			_actionbar.ShowStatus(BluetoothConnectedThread.DefaultDeviceName, false);
 			return false;
 		}
@@ -339,7 +340,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		{
 			public void run()
 			{
-				_actionbar.ShowStatus(false);;
+				//_actionbar.ShowStatus(false);
 			}
 		});
 	}

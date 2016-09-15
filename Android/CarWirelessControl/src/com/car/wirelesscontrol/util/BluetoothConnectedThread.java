@@ -15,7 +15,7 @@ public class BluetoothConnectedThread extends Thread
 {
 	private static final UUID	MY_UUID				= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final static int			RECIEVE_MESSAGE		= 1;
-	static final String			DefaultDeviceName	= "Unknown";
+	static final String			DefaultDeviceName	= "UnknownXXX";
 	private BluetoothAdapter	mmBluetoothAdapter	= null;
 	private BluetoothDevice		mmBluetoothDevice	= null;
 	private BluetoothSocket		mmSocket			= null;
@@ -34,6 +34,7 @@ public class BluetoothConnectedThread extends Thread
 		void BluetoothRespose(char c);
 
 		void ShowBluetoothStatus();
+
 		void ShowBluetoothErrorStatus();
 	}
 
@@ -50,6 +51,7 @@ public class BluetoothConnectedThread extends Thread
 		{
 			return mmBluetoothDevice.getName();
 		}
+		Logger.Log.e("mmBluetoothDevice");
 		return DefaultDeviceName;
 
 	}
@@ -81,7 +83,7 @@ public class BluetoothConnectedThread extends Thread
 		mmBluetoothDevice = bluetoothAdapter.getRemoteDevice(mac);
 		if (null == mmBluetoothDevice)
 		{
-			Logger.Log.e("bluetoth device is null");
+			Logger.Log.e("bluetooth device is null");
 			return false;
 		}
 		try
@@ -167,12 +169,10 @@ public class BluetoothConnectedThread extends Thread
 		}
 		if (!ConnectSocket())
 		{
-			Cancel();
 			return;
 		}
 		if (!SocketStreams())
 		{
-			Cancel();
 			return;
 		}
 		byte[] buffer = new byte[256]; // buffer store for the stream
