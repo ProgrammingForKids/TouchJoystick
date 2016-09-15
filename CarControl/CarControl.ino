@@ -145,6 +145,7 @@ struct MoveOp
     if (bNewCommand)
     {
       wheelsConstrain.set(0);
+      actionConstrain.set(Traits::ActionTime());
     }
     
     if (bNewCommand || wheelsConstrain.check())
