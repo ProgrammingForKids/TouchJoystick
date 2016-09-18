@@ -58,11 +58,13 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 
 	public boolean IsConnected()
 	{
+		boolean ret = false;
 		if (null != _BluetoothConnectedThread)
 		{
-			return _BluetoothConnectedThread.isConnected();
+			ret = _BluetoothConnectedThread.isConnected();
 		}
-		return false;
+		_actionbar.ShowStatus(ret);
+		return ret;
 	}
 
 	public boolean ShowConnectStatus()
@@ -255,19 +257,6 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 	}
 
-	public void Send(final char c)
-	{
-		if (null != _BluetoothConnectedThread)
-		{
-			_BluetoothConnectedThread.Send(c);
-		}
-		else
-		{
-			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
-			ShowBluetoothStatus();
-		}
-	}
-
 	@Override
 	public void BluetoothRespose(char c)
 	{
@@ -340,7 +329,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		{
 			public void run()
 			{
-				//_actionbar.ShowStatus(false);
+				// _actionbar.ShowStatus(false);
 			}
 		});
 	}
