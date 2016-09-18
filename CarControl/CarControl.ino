@@ -95,7 +95,7 @@ bool ProbeOutlook()
     }
     else
     {
-      outlookConstrain.set(20);    
+      outlookConstrain.set(50);    
     }
   }
 
