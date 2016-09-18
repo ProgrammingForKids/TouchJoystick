@@ -276,6 +276,7 @@ void loop()
 
   default:
     BT.print('X');
+    Log("Reply X");
     reply = '\0';
     ongoingOp = '\0';
     actionConstrain.set(0);
