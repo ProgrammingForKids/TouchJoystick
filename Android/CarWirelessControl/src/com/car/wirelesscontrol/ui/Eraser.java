@@ -1,6 +1,7 @@
 package com.car.wirelesscontrol.ui;
 
 import com.car.programmator.ui.R;
+import com.car.wirelesscontrol.util.Logger;
 
 import android.app.Activity;
 import android.view.View;
@@ -62,6 +63,7 @@ public class Eraser
 			@Override
 			public boolean onLongClick(View v)
 			{
+				_selected_image.Unselect();
 				_command_aria.removeAllViews();
 				mCallback.onErase();
 				return false;
