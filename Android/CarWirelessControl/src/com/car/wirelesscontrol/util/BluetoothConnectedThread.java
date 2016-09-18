@@ -15,7 +15,7 @@ public class BluetoothConnectedThread extends Thread
 {
 	private static final UUID	MY_UUID				= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final static int			RECIEVE_MESSAGE		= 1;
-	static final String			DefaultDeviceName	= "UnknownXXX";
+	static final String			DefaultDeviceName	= "Unknown";
 	private BluetoothAdapter	mmBluetoothAdapter	= null;
 	private BluetoothDevice		mmBluetoothDevice	= null;
 	private BluetoothSocket		mmSocket			= null;
@@ -258,44 +258,23 @@ public class BluetoothConnectedThread extends Thread
 		mmBluetoothDevice = null;
 	}
 
-	/* Call this from the main activity to send data to the remote device */
-	public void Send(char c)
-	{
-		if (0 == c)
-		{
-			return;
-		}
-		if (null == mmOutStream)
-		{
-			return;
-		}
-		try
-		{
-			mmOutStream.write(c);
-		}
-		catch (IOException e)
-		{
-			mCallback.BluetoothRespose(Callback.SOCKET_CLOSED);
-			Cancel();
-			Logger.Log.t("Send(char)", e.getMessage());
-		}
-	}
-
 	public void Send(String message)
 	{
-		if (null == mmOutStream)
+		if (null != mmOutStream)
 		{
-			return;
+			byte[] msgBuffer = message.getBytes();
+			try
+			{
+				mmOutStream.write(msgBuffer);
+				return;
+			}
+			catch (IOException e)
+			{
+				Logger.Log.t("Send(String)", e.getMessage());
+			}
 		}
-		byte[] msgBuffer = message.getBytes();
-		try
-		{
-			mmOutStream.write(msgBuffer);
-		}
-		catch (IOException e)
-		{
-			Logger.Log.t("Send(String)", e.getMessage());
-		}
+
+		mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
 	}
 
 	/* Call this from the main activity to shutdown the connection */

@@ -35,7 +35,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private BlueToothHelper		m_bth			= null;
 	private UIHelper			m_ui			= null;
 	private BroadcastReceiver	m_receiver		= null;
-	private SoundHelper			m_sound			= new SoundHelper();
+	private final SoundHelper	m_sound			= new SoundHelper();
+	private final Simulator		m_simulator		= new Simulator();
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -50,10 +51,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			{
 				String action = intent.getAction();
 				Logger.Log.t("BroadcastReceiver", action);
-				// When discovery finds a device
 				if (BluetoothDevice.ACTION_FOUND.equals(action))
 				{
-					// Get the BluetoothDevice object from the Intent
 					BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 					if (null != device)
 					{
@@ -88,10 +87,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		m_sound.Create(this);
 		if (null != m_bth)
 		{
-//			if (!m_bth.IsConnected())
-//			{
-//				m_bth.TryToConnect();
-//			}
+			if (!m_bth.IsConnected())
+			{
+				// m_bth.TryToConnect();
+			}
 		}
 	}
 
@@ -190,10 +189,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private void ResposeToUiThread(char c)
 	{
 		char cd = m_ui.Unselect().OpcodeCurrent();
-		m_ui.Select();
-		Logger.Log.e("KOKA", c, cd);
+		Logger.Log.e("RESPONSE", c, cd);
 		if ((cd - c) == ('a' - 'A'))
 		{
+			m_ui.Select();
 			int next = m_ui.AskNextCommandChunk();
 			switch (next)
 			{
@@ -210,7 +209,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					break;
 			}
 		}
-		m_ui.Unselect();
 		StopPerform();
 		switch (c)
 		{
@@ -258,7 +256,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			m_sound.PlayDing();
 			if (__SIMULATOR__)
 			{
-				SendImitator();
+				m_simulator.Start();
 			}
 			SendComandPkg(pkg);
 		}
@@ -268,7 +266,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		if (__SIMULATOR__)
 		{
-			SendImitator(pkg);
+			m_simulator.Send(pkg);
 		}
 		else
 		{
@@ -345,48 +343,48 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 
 	}
 
-	// Simulator Part
-	Stack<Character> cmd = new Stack<Character>();
-
-	void SendImitator(String buf)
+	class Simulator
 	{
-		for (int k = 0; k < buf.length(); ++k)
-		{
-			cmd.add(0, buf.charAt(k));
-		}
-		return;
-	}
+		Stack<Character> cmd = new Stack<Character>();
 
-	void SendImitator()
-	{
-		new Thread(new Runnable()
+		void Send(String buf)
 		{
-			@Override
-			public void run()
+			for (int k = 0; k < buf.length(); ++k)
 			{
-
-				while (true)
-				{
-					try
-					{
-						Thread.sleep(1000);
-					}
-					catch (InterruptedException e)
-					{
-					}
-					if (0 == cmd.size())
-					{
-						// BluetoothResponse(STOP_PERFORMANCE);
-						// Logger.Log.e("KOKA", "STOP");
-						break;
-					}
-					char c = cmd.pop();
-					c -= ('a' - 'A');
-					BluetoothResponse(c);
-
-				}
+				cmd.add(0, buf.charAt(k));
 			}
-		}, "SendImitator").start();
-	}
+			return;
+		}
+
+		void Start()
+		{
+			new Thread(new Runnable()
+			{
+				@Override
+				public void run()
+				{
+
+					while (true)
+					{
+						try
+						{
+							Thread.sleep(1000);
+						}
+						catch (InterruptedException e)
+						{
+						}
+						if (0 == cmd.size())
+						{
+							break;
+						}
+						char c = cmd.pop();
+						c -= ('a' - 'A');
+						BluetoothResponse(c);
+
+					}
+				}
+			}, "SendImitator").start();
+		}
+	}// Simulator
 
 }// class MainActivity

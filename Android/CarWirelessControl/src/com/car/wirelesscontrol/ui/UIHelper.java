@@ -124,13 +124,23 @@ public class UIHelper implements Eraser.Callback
 																	return;
 																}
 																Logger.Log.t("SELECT");
-																if (v.equals(_imgselected.SelectedView()))
+																if (_imgselected.IsSelected() && !v.equals(_imgselected.SelectedView()))
 																{
-																	_command_aria.removeView(_imgselected.InsertView());
-																	_imgselected.Unselect();
-																	IsCommandStringChanged();
+																	UnselectSelectedStep();
+																	SelectNewStep(v);
 																	return;
 																}
+
+																if (v.equals(_imgselected.SelectedView()))
+																{
+																	UnselectSelectedStep();
+																	return;
+																}
+																SelectNewStep(v);
+															}
+
+															private void SelectNewStep(View v)
+															{
 																int count = _command_aria.getChildCount();
 																for (int index = 0; index < count; ++index)
 																{
@@ -143,6 +153,13 @@ public class UIHelper implements Eraser.Callback
 																		break;
 																	}
 																}
+															}
+
+															private void UnselectSelectedStep()
+															{
+																_command_aria.removeView(_imgselected.InsertView());
+																_imgselected.Unselect();
+																IsCommandStringChanged();
 															}
 														};
 
