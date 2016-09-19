@@ -1,4 +1,5 @@
 #include "Outlook.h"
+#include "Log.h"
 
 Outlook::Outlook(int echo, int trig, unsigned long range, int led)
 : _pinEcho(echo)
@@ -6,6 +7,7 @@ Outlook::Outlook(int echo, int trig, unsigned long range, int led)
 , _delay_for_range(range * 1000 * 1000 * 2 / 100 / 340)
 , _pinLed(led)
 {
+  Log("DURATION set to ")(_delay_for_range)(" for range of ")(range)(" cm");
 }
 
 void Outlook::begin()
@@ -17,6 +19,8 @@ void Outlook::begin()
     pinMode(_pinLed, OUTPUT);
     digitalWrite(_pinLed, LOW);
   }
+  digitalWrite(_pinTrig, LOW);
+  delayMicroseconds(15);
 }
 
 
@@ -24,19 +28,17 @@ bool Outlook::isInRange()
 {
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
   // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(_pinTrig, LOW);
-  delayMicroseconds(10);
   digitalWrite(_pinTrig, HIGH);
-  delayMicroseconds(15);
+  delayMicroseconds(10);
   digitalWrite(_pinTrig, LOW);
 
   // Read the signal from the sensor: a HIGH pulse whose
   // duration is the time (in microseconds) from the sending
   // of the ping to the reception of its echo off of an object.
-  pinMode(_pinEcho, INPUT);
+  //pinMode(_pinEcho, INPUT);
   unsigned long duration = pulseIn(_pinEcho, HIGH, _delay_for_range * 10);
 
-  // Serial.println(duration);
+  Log("Duration =")(duration);
 
   bool retval = (duration > 0 && duration <= _delay_for_range );
   
