@@ -7,7 +7,7 @@
     tools:context="com.control.ui.MainActivity" >
 
     <com.car.wirelesscontrol.ui.FlowLayout
-        android:id="@+id/test"
+        android:id="@+id/commandArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="16"
@@ -51,8 +51,9 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@android:color/black"
-            android:gravity="bottom"
+            android:lines="4"
             android:textColor="@android:color/white" />
+
     </LinearLayout>
 
 </LinearLayout>
