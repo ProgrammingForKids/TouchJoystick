@@ -231,7 +231,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 						IsConnectedAsync();
 					}
 				},
-				5000);
+				1000);
 	}
 
 	boolean InitAndStartBluetoothConnectedThread(final String mac)
