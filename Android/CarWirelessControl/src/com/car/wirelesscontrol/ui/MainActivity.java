@@ -38,6 +38,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	private final SoundHelper	m_sound			= new SoundHelper();
 	private final Simulator		m_simulator		= new Simulator();
 
+	private final int			max_count_click	= 5;
+	private int					m_count_click	= 0;
+	private boolean				mTrace			= false;
+	private MenuItem			m_adlistItem	= null;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
 	{
@@ -70,6 +75,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 					{
 						m_bth.FoundDeviceList().add("Found Device List is empty");
 					}
+					m_bth.EndWait();
+					m_bth.StartDiscovery();
 					ShowDevices(m_bth.FoundDeviceList());
 				}
 			}
@@ -130,6 +137,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
 		m_ui.SetMenuItem(menu.findItem(R.id.action_current));
+
+		m_adlistItem = menu.findItem(R.id.action_devices_list);
+		if (null != m_adlistItem)
+		{
+			m_adlistItem.setVisible(mTrace);
+		}
+
 		if (menu.getClass().getSimpleName().equals("MenuBuilder"))
 		{
 			try
@@ -158,23 +172,41 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		int id = item.getItemId();
 		if (id == R.id.action_settings)
 		{
+			m_count_click = 0;
 			ShowBondedDeviceList();
 		}
 		else if (id == R.id.action_load_file)
 		{
+			m_count_click = 0;
 			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_LOAD_FILE);
 			dlg.ShowDialog(this, m_ui);
 		}
 		else if (id == R.id.action_save_file)
 		{
+			m_count_click = 0;
 			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_SAVE_FILE);
 			dlg.ShowDialog(this, m_ui);
-
 		}
 		else if (id == R.id.action_devices_list)
 		{
+			m_bth.BeginWait();
 			m_bth.FoundDeviceList().clear();
 			m_bth.StartDiscovery();
+			m_count_click = 0;
+		}
+		else if (id == R.id.action_current)
+		{
+			m_count_click += 1;
+			if (m_count_click >= max_count_click)
+			{
+				mTrace = !mTrace;
+				if (null != m_adlistItem)
+				{
+					m_adlistItem.setVisible(mTrace);
+				}
+				m_ui.SetPrompt(mTrace);
+				m_count_click = 0;
+			}
 		}
 
 		return super.onOptionsItemSelected(item);
@@ -190,6 +222,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		char cd = m_ui.Unselect().OpcodeCurrent();
 		Logger.Log.e("RESPONSE", c, cd);
+		m_ui.SetPrompt("[" + c + ":" + cd + "] ");
 		if ((cd - c) == ('a' - 'A'))
 		{
 			m_ui.Select();

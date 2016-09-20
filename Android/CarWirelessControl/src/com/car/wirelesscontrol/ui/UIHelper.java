@@ -31,7 +31,7 @@ public class UIHelper implements Eraser.Callback
 	Eraser					_eraser			= null;
 	LinearLayout			_area_tools		= null;
 	LinearLayout			_current_area	= null;
-	private FlowLayout		_command_aria	= null;
+	private FlowLayout		_command_area	= null;
 	private boolean			_performMode	= false;
 	final Activity			_activity;
 	private final Chunkof	Chunk;
@@ -86,12 +86,12 @@ public class UIHelper implements Eraser.Callback
 			}
 		});
 
-		_command_aria = (FlowLayout) activity.findViewById(R.id.test);
-		_command_aria.setOnDragListener(myOnDragListener);
+		_command_area = (FlowLayout) activity.findViewById(R.id.commandArea);
+		_command_area.setOnDragListener(myOnDragListener);
 
 		_prompt = (TextView) activity.findViewById(R.id.prompt);
 		_prompt.setVisibility(View.GONE);
-		if (_prompt.isShown())
+		// if (_prompt.isShown())
 		{
 			// make TextView scrollable
 			_prompt.setMovementMethod(new ScrollingMovementMethod());
@@ -112,6 +112,46 @@ public class UIHelper implements Eraser.Callback
 		ImageHelper.Store(activity, OpCode._LEFT, _area_tools, _OnClickListenerOpcodeToView);
 		ImageHelper.Store(activity, OpCode._RIGHT, _area_tools, _OnClickListenerOpcodeToView);
 
+	}
+
+	public void SetPrompt(boolean b)
+	{
+		int vis = (b) ? View.VISIBLE : View.GONE;
+		_prompt.setVisibility(vis);
+	}
+
+	public void SetPrompt(String txt)
+	{
+		if (_prompt.isShown())
+		{
+			String str = _prompt.getText().toString();
+			_prompt.setText(str + txt);
+		}
+
+	}
+
+	private void SelectNewStep(View v)
+	{
+		int count = _command_area.getChildCount();
+		for (int index = 0; index < count; ++index)
+		{
+			View test = _command_area.getChildAt(index);
+			if (test.equals(v))
+			{
+				_imgselected.Set(v, index);
+				_command_area.addView(_imgselected.InsertView(), index);
+				_imgselected.InsertView().setOnLongClickListener(myOnLongClickListener);
+				IsCommandStringChanged();
+				break;
+			}
+		}
+	}
+
+	private void UnselectSelectedStep()
+	{
+		_command_area.removeView(_imgselected.InsertView());
+		_imgselected.Unselect();
+		IsCommandStringChanged();
 	}
 
 	OnClickListener		_OnClickSelectInsert			= new OnClickListener()
@@ -139,28 +179,6 @@ public class UIHelper implements Eraser.Callback
 																SelectNewStep(v);
 															}
 
-															private void SelectNewStep(View v)
-															{
-																int count = _command_aria.getChildCount();
-																for (int index = 0; index < count; ++index)
-																{
-																	View test = _command_aria.getChildAt(index);
-																	if (test.equals(v))
-																	{
-																		_imgselected.Set(v, index);
-																		_command_aria.addView(_imgselected.InsertView(), index);
-																		IsCommandStringChanged();
-																		break;
-																	}
-																}
-															}
-
-															private void UnselectSelectedStep()
-															{
-																_command_aria.removeView(_imgselected.InsertView());
-																_imgselected.Unselect();
-																IsCommandStringChanged();
-															}
 														};
 
 	OnClickListener		_OnClickListenerOpcodeToView	= new OnClickListener()
@@ -176,13 +194,13 @@ public class UIHelper implements Eraser.Callback
 																ImageView iv = ImageToCommandArea(v.getId());
 																if (-1 < _imgselected.InsertIndex())
 																{
-																	_command_aria.addView(iv, _imgselected.InsertIndex());
-																	_command_aria.removeView(_imgselected.InsertView());
+																	_command_area.addView(iv, _imgselected.InsertIndex());
+																	_command_area.removeView(_imgselected.InsertView());
 																	_imgselected.Unselect();
 																}
 																else
 																{
-																	_command_aria.addView(iv);
+																	_command_area.addView(iv);
 																}
 																IsCommandStringChanged();
 															}
@@ -214,22 +232,22 @@ public class UIHelper implements Eraser.Callback
 															{
 																switch (event.getAction())
 																{
-																	case DragEvent.ACTION_DRAG_STARTED:
-																		break;
-																	case DragEvent.ACTION_DRAG_ENTERED:
-																		break;
-																	case DragEvent.ACTION_DRAG_EXITED:
-																		break;
-																	case DragEvent.ACTION_DROP:
-																		break;
 																	case DragEvent.ACTION_DRAG_ENDED:
 																		if (!_performMode)
 																		{
 																			View view = (View) event.getLocalState();
-																			_command_aria.removeView(view);
+																			if (OpCode._INSERT == view.getId())
+																			{
+																				UnselectSelectedStep();
+																			}
+																			_command_area.removeView(view);
 																			IsCommandStringChanged();
 																		}
 																		break;
+																	case DragEvent.ACTION_DRAG_STARTED:
+																	case DragEvent.ACTION_DRAG_ENTERED:
+																	case DragEvent.ACTION_DRAG_EXITED:
+																	case DragEvent.ACTION_DROP:
 																	default:
 																		break;
 																}
@@ -237,6 +255,7 @@ public class UIHelper implements Eraser.Callback
 															}
 
 														};
+
 	private MenuItem	_showFileMenuItem;
 	private String		_commandString;
 	private int			_fileIconId;
@@ -250,9 +269,9 @@ public class UIHelper implements Eraser.Callback
 	{
 		if (!IsSelected())
 		{
-			if (-1 < _performed.index && _performed.index < _command_aria.getChildCount())
+			if (-1 < _performed.index && _performed.index < _command_area.getChildCount())
 			{
-				_performed.view = _command_aria.getChildAt(_performed.index);
+				_performed.view = _command_area.getChildAt(_performed.index);
 				++_performed.index;
 				_performed.Select();
 			}
@@ -331,10 +350,10 @@ public class UIHelper implements Eraser.Callback
 	public String CommandToString()
 	{
 		String ret = "";
-		int count = _command_aria.getChildCount();
+		int count = _command_area.getChildCount();
 		for (int k = 0; k < count; ++k)
 		{
-			View v = _command_aria.getChildAt(k);
+			View v = _command_area.getChildAt(k);
 			char c = OpCode.OpcodeC(v.getId());
 			ret += c;
 		}
@@ -344,7 +363,7 @@ public class UIHelper implements Eraser.Callback
 	public void StringToCommand(String commands)
 	{
 		SaveCommandString(commands);
-		_command_aria.removeAllViews();
+		_command_area.removeAllViews();
 		int length = commands.length();
 		for (int k = 0; k < length; ++k)
 		{
@@ -353,7 +372,7 @@ public class UIHelper implements Eraser.Callback
 			if (0 != id)
 			{
 				ImageView iv = ImageToCommandArea(id);
-				_command_aria.addView(iv);
+				_command_area.addView(iv);
 			}
 		}
 	}
@@ -365,6 +384,7 @@ public class UIHelper implements Eraser.Callback
 		{
 			iv.setOnClickListener(_OnClickSelectInsert);
 			iv.setOnLongClickListener(myOnLongClickListener);
+
 		}
 		return iv;
 	}
@@ -481,7 +501,7 @@ public class UIHelper implements Eraser.Callback
 		{
 			_curr = 0;
 			_pos = 0;
-			_childCount = _command_aria.getChildCount();
+			_childCount = _command_area.getChildCount();
 		}
 
 		String GetChunk(int start, int number)
@@ -500,7 +520,7 @@ public class UIHelper implements Eraser.Callback
 
 			for (int k = start; k < nCount; ++k)
 			{
-				View v = _command_aria.getChildAt(k);
+				View v = _command_area.getChildAt(k);
 				char c = OpCode.OpcodeC(v.getId());
 				ret += c;
 			}

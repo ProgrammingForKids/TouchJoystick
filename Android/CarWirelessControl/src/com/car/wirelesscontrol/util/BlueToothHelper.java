@@ -108,6 +108,17 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 	}
 
+	public void CancelDiscovery()
+	{
+		if (null != _bluetoothAdapter)
+		{
+			if (_bluetoothAdapter.isDiscovering())
+			{
+				_bluetoothAdapter.cancelDiscovery();
+			}
+		}
+	}
+
 	public void Finalize()
 	{
 		if (null != _BluetoothConnectedThread)
@@ -180,7 +191,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 	public void ConnectToBluetothDevice(final String name_mac)
 	{
 		BeginWait();
-		ConnectToBTDevice(name_mac);
+		if (!ConnectToBTDevice(name_mac))
+		{
+			EndWait();
+		}
 	}
 
 	private boolean ConnectToBTDevice(final String name_mac)
@@ -202,7 +216,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 			tmp.Cancel();
 		}
 		InitAndStartBluetoothConnectedThreadAsync(mac);
-		return false;
+		return true;
 	}
 
 	void InitAndStartBluetoothConnectedThreadAsync(final String mac)
@@ -217,7 +231,7 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 						IsConnectedAsync();
 					}
 				},
-				5000);
+				1000);
 	}
 
 	boolean InitAndStartBluetoothConnectedThread(final String mac)
@@ -283,7 +297,10 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		if (0 <= mIndex && _bondedDeviceList.size() > mIndex)
 		{
 			BeginWait();
-			ConnectToBTDevice(_bondedDeviceList.get(mIndex));
+			if (ConnectToBTDevice(_bondedDeviceList.get(mIndex)))
+			{
+				EndWait();
+			}
 		}
 		else
 		{
@@ -292,13 +309,13 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		}
 	}
 
-	private void BeginWait()
+	public void BeginWait()
 	{
 		_dialog = CustomProgressDialog.ctor(_activity);// ProgressDialog.show(_activity, null, "// ",
 		_dialog.show();
 	}
 
-	private void EndWait()
+	public void EndWait()
 	{
 		if (null != _dialog)
 		{
@@ -317,7 +334,8 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 		{
 			public void run()
 			{
-				ShowConnectStatus();
+				boolean b = ShowConnectStatus();
+				Logger.Log.t("Connect STATUS1",b);
 			}
 		});
 	}

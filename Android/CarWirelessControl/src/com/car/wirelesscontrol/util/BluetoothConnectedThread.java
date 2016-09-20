@@ -77,6 +77,7 @@ public class BluetoothConnectedThread extends Thread
 		if (null == bluetoothAdapter)
 		{
 			Logger.Log.e("bluetoothAdapter is null");
+			mCallback.ShowBluetoothStatus();
 			return false;
 		}
 		mmBluetoothAdapter = bluetoothAdapter;
@@ -84,6 +85,7 @@ public class BluetoothConnectedThread extends Thread
 		if (null == mmBluetoothDevice)
 		{
 			Logger.Log.e("bluetooth device is null");
+			mCallback.ShowBluetoothStatus();
 			return false;
 		}
 		try
@@ -93,6 +95,7 @@ public class BluetoothConnectedThread extends Thread
 		catch (IOException e)
 		{
 			Logger.Log.e("device", e.getMessage());
+			mCallback.ShowBluetoothStatus();
 			return false;
 		}
 		return (null != mmSocket);
@@ -102,6 +105,7 @@ public class BluetoothConnectedThread extends Thread
 	{
 		if (null == mmSocket)
 		{
+			mCallback.ShowBluetoothStatus();
 			return false;
 		}
 		InputStream tmpIn = null;
@@ -169,10 +173,12 @@ public class BluetoothConnectedThread extends Thread
 		}
 		if (!ConnectSocket())
 		{
+			mCallback.ShowBluetoothStatus();
 			return;
 		}
 		if (!SocketStreams())
 		{
+			mCallback.ShowBluetoothStatus();
 			return;
 		}
 		byte[] buffer = new byte[256]; // buffer store for the stream

@@ -1,8 +1,6 @@
 package com.car.wirelesscontrol.ui;
 
 import com.car.programmator.ui.R;
-import com.car.wirelesscontrol.util.Logger;
-
 import android.app.Activity;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -31,7 +29,7 @@ public class Eraser
 	public Eraser(Activity activity, final ImageSelected selectedImage)
 	{
 		_selected_image = selectedImage;
-		_command_aria = (FlowLayout) activity.findViewById(R.id.test);
+		_command_aria = (FlowLayout) activity.findViewById(R.id.commandArea);
 		_eraser = (ImageView) activity.findViewById(R.id.image_eraser);
 		_eraser.setOnClickListener(new OnClickListener()
 		{
