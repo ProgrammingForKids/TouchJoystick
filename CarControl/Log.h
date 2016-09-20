@@ -43,7 +43,7 @@ class Log
 public:
   Log(){};
   Log(String) {};
-  template <typename _T> Log& operator()(_T) {}
+  template <typename _T> Log& operator()(_T) {return *this;}
   static void begin() {}
 };
 
