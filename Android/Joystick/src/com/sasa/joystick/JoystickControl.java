@@ -1,5 +1,6 @@
 package com.sasa.joystick;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,25 +15,21 @@ public class JoystickControl extends View implements Runnable
 	private final double			RAD						= 57.2957795;
 	public final static long		DEFAULT_LOOP_INTERVAL	= 100;					// 100 ms
 	public final static int			FORWARD					= 3;
-	public final static int			FORWARD_RIGHT			= 4;
-	public final static int			RIGHT					= 5;
-	public final static int			RIGHT_BACKWARD			= 6;
+	public final static int			FORWARD_RIGHT			= 2;
+	public final static int			RIGHT					= 1;
+	public final static int			RIGHT_BACKWARD			= 8;
 	public final static int			BACKWARD				= 7;
-	public final static int			BACKWARD_LEFT			= 8;
-	public final static int			LEFT					= 1;
-	public final static int			LEFT_FORWARD			= 2;
+	public final static int			BACKWARD_LEFT			= 6;
+	public final static int			LEFT					= 5;
+	public final static int			LEFT_FORWARD			= 4;
 	// Variables
 	private OnJoystickMoveListener	onJoystickMoveListener;							// Listener
 	private Thread					thread					= new Thread(this);
 	private long					loopInterval			= DEFAULT_LOOP_INTERVAL;
-	private int						xPosition				= 0;					// Touch x
-																					// position
-	private int						yPosition				= 0;					// Touch y
-																					// position
-	private double					centerX					= 0;					// Center view x
-																					// position
-	private double					centerY					= 0;					// Center view y
-																					// position
+	private int						xPosition				= 0;					// Touch x position
+	private int						yPosition				= 0;					// Touch y position
+	private double					centerX					= 0;					// Center view x position
+	private double					centerY					= 0;					// Center view y position
 	private Paint					mainCircle;
 	private Paint					secondaryCircle;
 	private Paint					button;
@@ -58,6 +55,39 @@ public class JoystickControl extends View implements Runnable
 	{
 		super(context, attrs, defaultStyle);
 		initJoystickView();
+	}
+
+	public static String DirectionToPrompt(int direction)
+	{
+		switch (direction)
+		{
+			case JoystickControl.FORWARD:
+				return ("forward");
+			case JoystickControl.FORWARD_RIGHT:
+				return ("forward_right");
+
+			case JoystickControl.RIGHT:
+				return ("right");
+
+			case JoystickControl.RIGHT_BACKWARD:
+				return ("right_backward");
+
+			case JoystickControl.BACKWARD:
+				return ("bachward");
+
+			case JoystickControl.BACKWARD_LEFT:
+				return ("backward_left");
+
+			case JoystickControl.LEFT:
+				return ("left");
+
+			case JoystickControl.LEFT_FORWARD:
+				return ("left_forward");
+
+			default:
+				return ("center");
+		}
+
 	}
 
 	protected void initJoystickView()
@@ -155,6 +185,7 @@ public class JoystickControl extends View implements Runnable
 		canvas.drawCircle(xPosition, yPosition, buttonRadius, button);
 	}
 
+	@SuppressLint("ClickableViewAccessibility")
 	@Override
 	public boolean onTouchEvent(MotionEvent event)
 	{

@@ -1,6 +1,7 @@
 package com.car.wirelesscontrol.util;
 
 import com.car.programmator.ui.R;
+import com.sasa.logger.Logger;
 
 import android.app.ActionBar;
 import android.app.Activity;

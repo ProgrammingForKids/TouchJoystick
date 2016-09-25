@@ -2,10 +2,11 @@ package com.car.wirelesscontrol.ui;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Stack;
-
 import com.car.programmator.ui.R;
 import com.car.wirelesscontrol.util.*;
+import com.sasa.joystick.JoystickControl;
+import com.sasa.joystick.JoystickControl.OnJoystickMoveListener;
+import com.sasa.logger.Logger;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -29,14 +30,17 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
 
-public class MainActivity extends Activity implements BlueToothHelper.Callback, UIHelper.Callback
+public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
-	private boolean				__SIMULATOR__	= false;
 	private BlueToothHelper		m_bth			= null;
-	private UIHelper			m_ui			= null;
 	private BroadcastReceiver	m_receiver		= null;
+	private JoystickControl		joystick		= null;
+	private TextView			m_angle			= null;
+	private TextView			m_power			= null;;
+	private TextView			m_direction		= null;;
+	private TextView			m_byte_command	= null;
+
 	private final SoundHelper	m_sound			= new SoundHelper();
-	private final Simulator		m_simulator		= new Simulator();
 
 	private final int			max_count_click	= 5;
 	private int					m_count_click	= 0;
@@ -49,7 +53,27 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		m_bth = new BlueToothHelper(this, this);
-		m_ui = new UIHelper(this, this);
+
+		m_angle = (TextView) findViewById(R.id.angleTextView);
+		m_power = (TextView) findViewById(R.id.powerTextView);
+		m_direction = (TextView) findViewById(R.id.directTextView);
+		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
+
+		joystick = (JoystickControl) findViewById(R.id.joystickView);
+		joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
+		{
+
+			@Override
+			public void onValueChanged(int angle, int power, int direction)
+			{
+				byte comm = PreparePackage(angle, power, direction);
+				m_byte_command.setText(" " + ByteToStr(comm));
+				m_angle.setText(" " + String.valueOf(angle) + "°");
+				m_power.setText(" " + String.valueOf(power) + "%");
+				m_direction.setText(JoystickControl.DirectionToPrompt(direction));
+			}
+		}, JoystickControl.DEFAULT_LOOP_INTERVAL);
+
 		m_receiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
 		{
 			public void onReceive(Context context, Intent intent)
@@ -136,7 +160,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-		m_ui.SetMenuItem(menu.findItem(R.id.action_current));
 
 		m_adlistItem = menu.findItem(R.id.action_devices_list);
 		if (null != m_adlistItem)
@@ -175,18 +198,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 			m_count_click = 0;
 			ShowBondedDeviceList();
 		}
-		else if (id == R.id.action_load_file)
-		{
-			m_count_click = 0;
-			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_LOAD_FILE);
-			dlg.ShowDialog(this, m_ui);
-		}
-		else if (id == R.id.action_save_file)
-		{
-			m_count_click = 0;
-			ChooseFileDialog dlg = new ChooseFileDialog(ChooseFileDialog.DIALOG_SAVE_FILE);
-			dlg.ShowDialog(this, m_ui);
-		}
 		else if (id == R.id.action_devices_list)
 		{
 			m_bth.BeginWait();
@@ -204,7 +215,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 				{
 					m_adlistItem.setVisible(mTrace);
 				}
-				m_ui.SetPrompt(mTrace);
 				m_count_click = 0;
 			}
 		}
@@ -212,105 +222,42 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		return super.onOptionsItemSelected(item);
 	}
 
-	private void StopPerform()
+	byte PreparePackage(int angle, int power, int direction)
 	{
-		m_ui.PerformMode(false);
-		m_ui.StartBntToStart();
+		double Y = power * Math.cos(Math.toRadians(angle));
+		double X = power * Math.sin(Math.toRadians(angle));
+		int y = (int) (Y * 16) / 100;
+		int x = (int) (X * 4) / 100;
+		byte by = (byte) Math.abs(y);
+		byte bx = (byte) Math.abs(x);
+		if (by == 16)
+		{
+			by = 15;
+		}
+		if (bx == 4)
+		{
+			bx = 3;
+		}
+		byte bp = (byte) ((by << 2) | bx);
+		if (0 > Y)
+		{
+			bp = (byte) (bp | (1 << 7));
+		}
+		if (0 > X)
+		{
+			bp = (byte) (bp | (1 << 6));
+		}
+		return bp;
 	}
 
-	private void ResposeToUiThread(char c)
+	public String ByteToStr(byte bt)
 	{
-		char cd = m_ui.Unselect().OpcodeCurrent();
-		Logger.Log.e("RESPONSE", c, cd);
-		m_ui.SetPrompt("[" + c + ":" + cd + "] ");
-		if ((cd - c) == ('a' - 'A'))
+		StringBuilder sb = new StringBuilder();
+		for (int k = 0; k < 8; ++k)
 		{
-			m_ui.Select();
-			int next = m_ui.AskNextCommandChunk();
-			switch (next)
-			{
-				case UIHelper.YES:
-					String pkg = m_ui.GetNextCommandChunk();
-					SendComandPkg(pkg);
-					return;
-				case UIHelper.NO:
-					return;
-				case UIHelper.STOP:
-					c = STOP_PERFORMANCE;
-					break;
-				default:
-					break;
-			}
+			sb.append((bt >> (7 - k)) & 1);
 		}
-		StopPerform();
-		switch (c)
-		{
-			case STOP_PERFORMANCE:
-			{
-				m_sound.PlayDing();
-				break;
-			}
-			case STOP_OBSTACLE:
-			{
-				m_sound.PlayHorn();
-				m_ui.PerformObstacle();
-				break;
-			}
-			case SOCKET_CLOSED:
-			case CONNECT_ERROR:
-			{
-				break;
-			}
-			default:
-			{
-				m_sound.PlayCrush();
-				m_ui.PerformError();
-			}
-
-		}
-
-	}
-
-	@Override
-	public void onStartPerform()
-	{
-		if (m_bth.IsConnected() || __SIMULATOR__)
-		{
-			m_ui.PerformMode(true);
-			m_ui.StartBntToStop();
-			m_ui.PreparationForStart();
-			m_ui.Select();
-			String pkg = m_ui.GetFirstCommandChunk();
-			if (pkg.length() == 0)
-			{
-				BluetoothResponse(PERFORM_ERROR);
-				return;
-			}
-			m_sound.PlayDing();
-			if (__SIMULATOR__)
-			{
-				m_simulator.Start();
-			}
-			SendComandPkg(pkg);
-		}
-	}
-
-	void SendComandPkg(final String pkg)
-	{
-		if (__SIMULATOR__)
-		{
-			m_simulator.Send(pkg);
-		}
-		else
-		{
-			m_bth.Send(pkg);
-		}
-	}
-
-	@Override
-	public void onStopPerform()
-	{
-		StopPerform();
+		return sb.toString();
 	}
 
 	@Override
@@ -321,7 +268,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		{
 			public void run()
 			{
-				ResposeToUiThread(c);
+				// ResposeToUiThread(c);
 			}
 		});
 	}
@@ -375,49 +322,5 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback, 
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
 	}
-
-	class Simulator
-	{
-		Stack<Character> cmd = new Stack<Character>();
-
-		void Send(String buf)
-		{
-			for (int k = 0; k < buf.length(); ++k)
-			{
-				cmd.add(0, buf.charAt(k));
-			}
-			return;
-		}
-
-		void Start()
-		{
-			new Thread(new Runnable()
-			{
-				@Override
-				public void run()
-				{
-
-					while (true)
-					{
-						try
-						{
-							Thread.sleep(1000);
-						}
-						catch (InterruptedException e)
-						{
-						}
-						if (0 == cmd.size())
-						{
-							break;
-						}
-						char c = cmd.pop();
-						c -= ('a' - 'A');
-						BluetoothResponse(c);
-
-					}
-				}
-			}, "SendImitator").start();
-		}
-	}// Simulator
 
 }// class MainActivity

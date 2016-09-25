@@ -3,6 +3,8 @@ package com.car.wirelesscontrol.util;
 import java.util.ArrayList;
 import java.util.Set;
 
+import com.sasa.logger.Logger;
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;

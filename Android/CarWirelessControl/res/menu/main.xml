@@ -9,18 +9,6 @@
         android:showAsAction="ifRoom"
         android:title="@null"/>
     <item
-        android:id="@+id/action_load_file"
-        android:icon="@drawable/filechoose"
-        android:orderInCategory="100"
-        android:showAsAction="collapseActionView"
-        android:title="@string/action_load_file"/>
-    <item
-        android:id="@+id/action_save_file"
-        android:icon="@drawable/filesaveas"
-        android:orderInCategory="100"
-        android:showAsAction="never"
-        android:title="@string/action_save_file"/>
-    <item
         android:id="@+id/action_devices_list"
         android:icon="@drawable/btlist"
         android:orderInCategory="100"
