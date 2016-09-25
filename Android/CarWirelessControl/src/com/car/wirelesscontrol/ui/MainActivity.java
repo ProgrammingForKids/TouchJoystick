@@ -34,11 +34,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 	private BlueToothHelper		m_bth			= null;
 	private BroadcastReceiver	m_receiver		= null;
-	private JoystickControl		joystick		= null;
+	private JoystickControl		m_joystick		= null;
 	private TextView			m_angle			= null;
 	private TextView			m_power			= null;;
 	private TextView			m_direction		= null;;
 	private TextView			m_byte_command	= null;
+	private byte				m_comm			= 0;
 
 	private final SoundHelper	m_sound			= new SoundHelper();
 
@@ -59,15 +60,20 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		m_direction = (TextView) findViewById(R.id.directTextView);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
 
-		joystick = (JoystickControl) findViewById(R.id.joystickView);
-		joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
+		m_joystick = (JoystickControl) findViewById(R.id.joystickView);
+		m_joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
 		{
 
 			@Override
 			public void onValueChanged(int angle, int power, int direction)
 			{
-				byte comm = PreparePackage(angle, power, direction);
-				m_byte_command.setText(" " + ByteToStr(comm));
+				byte t = CommandByteBuilder.PrepareCommandByte(angle, power, direction);
+				if (m_comm != t)
+				{
+					m_comm = t;
+					m_byte_command.setText(" " + CommandByteBuilder.ByteToStr(m_comm));
+					m_bth.Send(m_comm);
+				}
 				m_angle.setText(" " + String.valueOf(angle) + "°");
 				m_power.setText(" " + String.valueOf(power) + "%");
 				m_direction.setText(JoystickControl.DirectionToPrompt(direction));
@@ -220,44 +226,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 
 		return super.onOptionsItemSelected(item);
-	}
-
-	byte PreparePackage(int angle, int power, int direction)
-	{
-		double Y = power * Math.cos(Math.toRadians(angle));
-		double X = power * Math.sin(Math.toRadians(angle));
-		int y = (int) (Y * 16) / 100;
-		int x = (int) (X * 4) / 100;
-		byte by = (byte) Math.abs(y);
-		byte bx = (byte) Math.abs(x);
-		if (by == 16)
-		{
-			by = 15;
-		}
-		if (bx == 4)
-		{
-			bx = 3;
-		}
-		byte bp = (byte) ((by << 2) | bx);
-		if (0 > Y)
-		{
-			bp = (byte) (bp | (1 << 7));
-		}
-		if (0 > X)
-		{
-			bp = (byte) (bp | (1 << 6));
-		}
-		return bp;
-	}
-
-	public String ByteToStr(byte bt)
-	{
-		StringBuilder sb = new StringBuilder();
-		for (int k = 0; k < 8; ++k)
-		{
-			sb.append((bt >> (7 - k)) & 1);
-		}
-		return sb.toString();
 	}
 
 	@Override

@@ -272,6 +272,18 @@ public class BlueToothHelper implements BluetoothConnectedThread.Callback
 			ShowBluetoothStatus();
 		}
 	}
+	public void Send(final byte comm)
+	{
+		if (null != _BluetoothConnectedThread)
+		{
+			_BluetoothConnectedThread.Send(comm);
+		}
+		else
+		{
+			mCallback.BluetoothResponse(Callback.CONNECT_ERROR);
+			ShowBluetoothStatus();
+		}
+	}
 
 	@Override
 	public void BluetoothRespose(char c)

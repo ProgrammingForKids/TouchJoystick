@@ -266,11 +266,22 @@ public class BluetoothConnectedThread extends Thread
 		mmBluetoothDevice = null;
 	}
 
+	public void Send(byte msg)
+	{
+		byte[] msgBuffer = { msg };
+		WriteToBluetoothSoket(msgBuffer);
+	}
+
 	public void Send(String message)
+	{
+		byte[] msgBuffer = message.getBytes();
+		WriteToBluetoothSoket(msgBuffer);
+	}
+
+	private void WriteToBluetoothSoket(byte[] msgBuffer)
 	{
 		if (null != mmOutStream)
 		{
-			byte[] msgBuffer = message.getBytes();
 			try
 			{
 				mmOutStream.write(msgBuffer);
@@ -281,7 +292,6 @@ public class BluetoothConnectedThread extends Thread
 				Logger.Log.t("Send(String)", e.getMessage());
 			}
 		}
-
 		mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
 	}
 
