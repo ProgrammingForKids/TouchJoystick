@@ -1,6 +1,8 @@
 package com.car.wirelesscontrol.util;
 
-import com.car.programmator.ui.R;
+
+
+import com.sasa.joystick.carwirelesscontrol.R;
 
 import android.app.ProgressDialog;
 import android.content.Context;

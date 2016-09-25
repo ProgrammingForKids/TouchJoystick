@@ -1,8 +1,8 @@
-package com.car.wirelesscontrol.ui;
+package com.sasa.joystick.carwirelesscontrol;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import com.car.programmator.ui.R;
+
 import com.car.wirelesscontrol.util.*;
 import com.sasa.joystick.JoystickControl;
 import com.sasa.joystick.JoystickControl.OnJoystickMoveListener;
@@ -26,6 +26,7 @@ import android.view.Window;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -37,10 +38,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private JoystickControl		m_joystick		= null;
 	private TextView			m_angle			= null;
 	private TextView			m_power			= null;;
-	private TextView			m_direction		= null;;
 	private TextView			m_byte_command	= null;
+	private ImageView			mImageView		= null;
 	private byte				m_comm			= 0;
-
 	private final SoundHelper	m_sound			= new SoundHelper();
 
 	private final int			max_count_click	= 5;
@@ -57,8 +57,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 		m_angle = (TextView) findViewById(R.id.angleTextView);
 		m_power = (TextView) findViewById(R.id.powerTextView);
-		m_direction = (TextView) findViewById(R.id.directTextView);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
+		mImageView = (ImageView) findViewById(R.id.carImageView);
 
 		m_joystick = (JoystickControl) findViewById(R.id.joystickView);
 		m_joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
@@ -72,11 +72,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				{
 					m_comm = t;
 					m_byte_command.setText(" " + CommandByteBuilder.ByteToStr(m_comm));
+					mImageView.setRotation(angle);
 					m_bth.Send(m_comm);
 				}
 				m_angle.setText(" " + String.valueOf(angle) + "°");
 				m_power.setText(" " + String.valueOf(power) + "%");
-				m_direction.setText(JoystickControl.DirectionToPrompt(direction));
+				//Logger.Log.t("Direction",JoystickControl.DirectionToPrompt(direction));
 			}
 		}, JoystickControl.DEFAULT_LOOP_INTERVAL);
 

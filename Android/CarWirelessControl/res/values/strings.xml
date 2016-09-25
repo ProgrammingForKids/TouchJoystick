@@ -8,10 +8,7 @@
     <!-- app -->
     <string name="dismiss">Dismiss</string>
     <string name="empty">empty</string>
-
-    <integer name="_padding_v">60</integer>
-    <integer name="_padding_h">16</integer>
-    <string name="byte_to_bt">Byte:</string>
+    <string name="byte_to_bt">Byte:</string>
     <string name="angle">Angle:</string>
     <string name="power">Power:</string>
     <string name="direct">Direction:</string>
