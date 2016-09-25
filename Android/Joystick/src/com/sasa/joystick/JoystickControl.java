@@ -14,6 +14,7 @@ public class JoystickControl extends View implements Runnable
 	// Constants
 	private final double			RAD						= 57.2957795;
 	public final static long		DEFAULT_LOOP_INTERVAL	= 100;					// 100 ms
+	public final static int			POWER_MAX				= 100;
 	public final static int			FORWARD					= 3;
 	public final static int			FORWARD_RIGHT			= 2;
 	public final static int			RIGHT					= 1;
@@ -191,8 +192,7 @@ public class JoystickControl extends View implements Runnable
 	{
 		xPosition = (int) event.getX();
 		yPosition = (int) event.getY();
-		double abs = Math.sqrt((xPosition - centerX) * (xPosition - centerX)
-				+ (yPosition - centerY) * (yPosition - centerY));
+		double abs = Math.sqrt((xPosition - centerX) * (xPosition - centerX) + (yPosition - centerY) * (yPosition - centerY));
 		if (abs > joystickRadius)
 		{
 			xPosition = (int) ((xPosition - centerX) * joystickRadius / abs + centerX);
@@ -279,10 +279,7 @@ public class JoystickControl extends View implements Runnable
 
 	private int getPower()
 	{
-		return (int) (100 * Math.sqrt((xPosition - centerX)
-				* (xPosition - centerX) + (yPosition - centerY)
-						* (yPosition - centerY))
-				/ joystickRadius);
+		return (int) (POWER_MAX * Math.sqrt((xPosition - centerX) * (xPosition - centerX) + (yPosition - centerY) * (yPosition - centerY)) / joystickRadius);
 	}
 
 	private int getDirection()
