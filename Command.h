@@ -4,12 +4,14 @@
 #pragma pack(push, 1)
 struct command
 {
+  //76543210
   //  rectilinear part is 5 bits
-  int fwd_rev_sign : 1; // 0 for forward, 1 for reverse
-  int linear_speed : 4;
+  int fwd_rev_sign : 1; // 0 for forward, 1 for reverse msb(7 bit)
+  int direction : 1; // 0 for right, 1 for left 6 bit
+  
+  int linear_speed : 4;   // 5,4,3,2 bit
   //  rotational part is 3 bits
-  int direction : 1; // 0 for right, 1 for left
-  int angular_speed : 2;
+  int angular_speed : 2; //1,0 bit
 };
 #pragma pack(pop)
 
