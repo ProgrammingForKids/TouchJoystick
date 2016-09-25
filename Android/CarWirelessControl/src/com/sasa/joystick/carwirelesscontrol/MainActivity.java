@@ -36,8 +36,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private BlueToothHelper		m_bth			= null;
 	private BroadcastReceiver	m_receiver		= null;
 	private JoystickControl		m_joystick		= null;
-	private TextView			m_angle			= null;
-	private TextView			m_power			= null;;
 	private TextView			m_byte_command	= null;
 	private ImageView			mImageView		= null;
 	private byte				m_comm			= 0;
@@ -54,9 +52,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		m_bth = new BlueToothHelper(this, this);
-
-		m_angle = (TextView) findViewById(R.id.angleTextView);
-		m_power = (TextView) findViewById(R.id.powerTextView);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
 		mImageView = (ImageView) findViewById(R.id.carImageView);
 
@@ -67,17 +62,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			@Override
 			public void onValueChanged(int angle, int power, int direction)
 			{
+				String res = "";
 				byte t = CommandByteBuilder.PrepareCommandByte(angle, power, direction);
 				if (m_comm != t)
 				{
 					m_comm = t;
-					m_byte_command.setText(" " + CommandByteBuilder.ByteToStr(m_comm));
 					mImageView.setRotation(angle);
 					m_bth.Send(m_comm);
 				}
-				m_angle.setText(" " + String.valueOf(angle) + "°");
-				m_power.setText(" " + String.valueOf(power) + "%");
-				//Logger.Log.t("Direction",JoystickControl.DirectionToPrompt(direction));
+				res = " " + CommandByteBuilder.ByteToStr(m_comm);
+				res += ("; " + String.valueOf(angle) + "°");
+				res += ("; " + String.valueOf(power) + "%");
+				m_byte_command.setText(res);
+				// Logger.Log.t("Direction",JoystickControl.DirectionToPrompt(direction));
 			}
 		}, JoystickControl.DEFAULT_LOOP_INTERVAL);
 
