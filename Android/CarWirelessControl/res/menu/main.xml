@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/action_current"
-        android:icon="@drawable/noload"
+        android:icon="@drawable/runtime"
         android:orderInCategory="100"
         android:showAsAction="ifRoom"
         android:title="@null"/>

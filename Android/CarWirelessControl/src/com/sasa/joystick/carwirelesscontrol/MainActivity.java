@@ -42,12 +42,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private final SoundHelper	m_sound			= new SoundHelper();
 
 	private final int			m_imgCount		= 6;
-	private final int			dd				= JoystickControl.POWER_MAX / m_imgCount;
+	private final int			m_dd			= JoystickControl.POWER_MAX / m_imgCount;
+	private final int			m_imgId[]		= { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
 
 	private final int			max_count_click	= 5;
 	private int					m_count_click	= 0;
 	private boolean				mTrace			= false;
 	private MenuItem			m_adlistItem	= null;
+	private MenuItem			m_actCurrent;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -168,7 +170,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	{
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.main, menu);
-
+		m_actCurrent = menu.findItem(R.id.action_current);
 		m_adlistItem = menu.findItem(R.id.action_devices_list);
 		if (null != m_adlistItem)
 		{
@@ -221,6 +223,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				mTrace = !mTrace;
 				if (null != m_adlistItem)
 				{
+					if (null != m_actCurrent)
+					{
+						int iconId = (mTrace)?R.drawable.debug:R.drawable.runtime;
+						m_actCurrent.setIcon(iconId);
+					}
 					m_adlistItem.setVisible(mTrace);
 				}
 				m_count_click = 0;
@@ -301,13 +308,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	void DrawImg(int power)
 	{
-		int id[] = { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
 
 		for (int k = 0; k < m_imgCount; ++k)
 		{
-			if ((dd * k) <= power && power < dd * (k + 1))
+			if ((m_dd * k) <= power && power < m_dd * (k + 1))
 			{
-				mImageView.setImageResource(id[k]);
+				mImageView.setImageResource(m_imgId[k]);
 			}
 		}
 	}

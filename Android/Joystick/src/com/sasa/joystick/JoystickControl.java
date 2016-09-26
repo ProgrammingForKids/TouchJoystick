@@ -13,7 +13,7 @@ public class JoystickControl extends View implements Runnable
 {
 	// Constants
 	private final double			RAD						= 57.2957795;
-	public final static long		DEFAULT_LOOP_INTERVAL	= 100;					// 100 ms
+	public final static long		DEFAULT_LOOP_INTERVAL	= 100;						// 100 ms
 	public final static int			POWER_MAX				= 100;
 	public final static int			FORWARD					= 3;
 	public final static int			FORWARD_RIGHT			= 2;
@@ -23,14 +23,16 @@ public class JoystickControl extends View implements Runnable
 	public final static int			BACKWARD_LEFT			= 6;
 	public final static int			LEFT					= 5;
 	public final static int			LEFT_FORWARD			= 4;
+	public final int				mButtonColor			= Color.rgb(98, 134, 210);
+
 	// Variables
-	private OnJoystickMoveListener	onJoystickMoveListener;							// Listener
+	private OnJoystickMoveListener	onJoystickMoveListener;								// Listener
 	private Thread					thread					= new Thread(this);
 	private long					loopInterval			= DEFAULT_LOOP_INTERVAL;
-	private int						xPosition				= 0;					// Touch x position
-	private int						yPosition				= 0;					// Touch y position
-	private double					centerX					= 0;					// Center view x position
-	private double					centerY					= 0;					// Center view y position
+	private int						xPosition				= 0;						// Touch x position
+	private int						yPosition				= 0;						// Touch y position
+	private double					centerX					= 0;						// Center view x position
+	private double					centerY					= 0;						// Center view y position
 	private Paint					mainCircle;
 	private Paint					secondaryCircle;
 	private Paint					button;
@@ -110,7 +112,7 @@ public class JoystickControl extends View implements Runnable
 		horizontalLine.setColor(Color.BLACK);
 
 		button = new Paint(Paint.ANTI_ALIAS_FLAG);
-		button.setColor(Color.BLUE);
+		button.setColor(mButtonColor);
 		button.setStyle(Paint.Style.FILL);
 
 	}
