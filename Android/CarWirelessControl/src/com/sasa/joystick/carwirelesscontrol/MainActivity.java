@@ -110,7 +110,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 						m_bth.FoundDeviceList().add("Found Device List is empty");
 					}
 					m_bth.EndWait();
-					m_bth.StartDiscovery();
+					m_bth.CancelDiscovery();
 					ShowDevices(m_bth.FoundDeviceList());
 				}
 			}
@@ -314,6 +314,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			if ((m_dd * k) <= power && power < m_dd * (k + 1))
 			{
 				mImageView.setImageResource(m_imgId[k]);
+				break;
 			}
 		}
 	}
