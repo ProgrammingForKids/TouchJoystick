@@ -10,7 +10,7 @@ public class CommandByteBuilder
 	// bits 5,4,3,2 -> forward/backward speed value
 	// bits 1,0 ->right/left speed value
 	//-------------------------------------------------
-	public static byte PrepareCommandByte(int angle, int power, int direction)
+	public static byte PrepareCommandByte22(int angle, int power, int direction)
 	{
 		double Y = power * Math.cos(Math.toRadians(angle));
 		double X = power * Math.sin(Math.toRadians(angle));
@@ -38,6 +38,20 @@ public class CommandByteBuilder
 		return bp;
 	}
 
+	public static byte PrepareCommandByte(int angle, int power)
+	{
+		byte speed =  (byte) ((power * 16) / JoystickControl.POWER_MAX);
+		if (speed == 16)
+		{
+			speed = 15;
+		}
+
+		byte sector =(byte) (((angle*4 + 45)/90)&0x0F);
+		byte res = (byte) (speed<<4 | sector);
+		return res;
+	}
+
+	
 	public static String ByteToStr(byte bt)
 	{
 		StringBuilder sb = new StringBuilder();

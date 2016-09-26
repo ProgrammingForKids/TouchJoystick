@@ -39,6 +39,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private TextView			m_byte_command	= null;
 	private ImageView			mImageView		= null;
 	private byte				m_comm			= 0;
+	private byte				m_speed			= 0;
+	private byte				m_sector		= 0;
 	private final SoundHelper	m_sound			= new SoundHelper();
 
 	private final int			m_imgCount		= 6;
@@ -68,13 +70,24 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			public void onValueChanged(int angle, int power, int direction)
 			{
 				String res = "";
-				byte t = CommandByteBuilder.PrepareCommandByte(angle, power, direction);
+				byte t = CommandByteBuilder.PrepareCommandByte(angle, power);
 				if (m_comm != t)
 				{
 					m_comm = t;
 					m_bth.Send(m_comm);
 				}
-				Preview(angle, power);
+				byte speed =(byte) (t>>4);
+				if (m_speed != speed)
+				{
+					m_speed = speed;
+					DrawImg(power);
+				}
+				byte sector = (byte) (t&0xF);
+				if (m_sector != sector)
+				{
+					m_sector = sector;
+					mImageView.setRotation(angle);
+				}
 				res = " " + CommandByteBuilder.ByteToStr(m_comm);
 				res += ("; " + String.valueOf(angle) + "°");
 				res += ("; " + String.valueOf(power) + "%");
@@ -225,7 +238,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				{
 					if (null != m_actCurrent)
 					{
-						int iconId = (mTrace)?R.drawable.debug:R.drawable.runtime;
+						int iconId = (mTrace) ? R.drawable.debug : R.drawable.runtime;
 						m_actCurrent.setIcon(iconId);
 					}
 					m_adlistItem.setVisible(mTrace);
@@ -299,12 +312,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
 	}
-
-	private void Preview(int angle, int power)
-	{
-		DrawImg(power);
-		mImageView.setRotation(angle);
-	}
+	//
+	// private void Preview(int angle, int power)
+	// {
+	// DrawImg(power);
+	// mImageView.setRotation(angle);
+	// }
 
 	void DrawImg(int power)
 	{
