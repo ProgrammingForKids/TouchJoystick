@@ -41,6 +41,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private byte				m_comm			= 0;
 	private final SoundHelper	m_sound			= new SoundHelper();
 
+	private final int			m_imgCount		= 6;
+	private final int			dd				= JoystickControl.POWER_MAX / m_imgCount;
+
 	private final int			max_count_click	= 5;
 	private int					m_count_click	= 0;
 	private boolean				mTrace			= false;
@@ -67,15 +70,16 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				if (m_comm != t)
 				{
 					m_comm = t;
-					mImageView.setRotation(angle);
 					m_bth.Send(m_comm);
 				}
+				Preview(angle, power);
 				res = " " + CommandByteBuilder.ByteToStr(m_comm);
 				res += ("; " + String.valueOf(angle) + "°");
 				res += ("; " + String.valueOf(power) + "%");
 				m_byte_command.setText(res);
 				// Logger.Log.t("Direction",JoystickControl.DirectionToPrompt(direction));
 			}
+
 		}, JoystickControl.DEFAULT_LOOP_INTERVAL);
 
 		m_receiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
@@ -287,6 +291,25 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
+	}
+
+	private void Preview(int angle, int power)
+	{
+		DrawImg(power);
+		mImageView.setRotation(angle);
+	}
+
+	void DrawImg(int power)
+	{
+		int id[] = { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
+
+		for (int k = 0; k < m_imgCount; ++k)
+		{
+			if ((dd * k) <= power && power < dd * (k + 1))
+			{
+				mImageView.setImageResource(id[k]);
+			}
+		}
 	}
 
 }// class MainActivity

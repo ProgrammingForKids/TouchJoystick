@@ -46,9 +46,10 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="0dp"
                 android:contentDescription="@null"
-                android:src="@drawable/car" />
+                android:src="@drawable/car0" />
 
         </LinearLayout>
+
     </LinearLayout>
 
     <com.sasa.joystick.JoystickControl
