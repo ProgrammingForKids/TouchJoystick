@@ -1,7 +1,0 @@
-'F' Step forward
-'L' Turn left
-'R' Turn right
-
-'O' Obstacle met
-'A' Accomplished step
-'R' Ready to go

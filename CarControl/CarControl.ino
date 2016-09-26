@@ -7,6 +7,8 @@ const unsigned long MAX_DISTANCE = 35;
 #include "TimeConstrain.h"
 #include "Log.h"
 
+#include "Command.h"
+
 /*
  * Ultrasonic sensor
   - Pin 10 ---> echo // yellow
@@ -193,94 +195,50 @@ struct MoveOp
   }
 };
 
+unsigned long last_bt_timestamp=0;
+
+void CalcWheelsSpeed(int speed, int sector, int& left_factor, int& right_factor)
+{
+  if (sector <= 4)
+  {
+    left_factor = 2 * speed;
+    right_factor = (2 - sector)*speed;
+  }
+  else if (sector <= 8)
+  {
+    left_factor = -2 * speed;
+    right_factor = (6 - sector)*speed;
+  }
+  else if (sector <= 11)
+  {
+    left_factor = (sector - 10)*speed;
+    right_factor = -2 * speed;
+  }
+  else if (sector <= 15)
+  {
+    left_factor = (sector - 14)*speed;
+    right_factor = 2 * speed;
+  }
+
+  else
+  {
+    Log("BAD SECTOR ")(sector);
+  }
+}
 
 void loop()
 {
-  if ( ! ProbeOutlook() )
+  if (BT.available())
   {
-    Log("Stopping before obstacle");
-    return;
+    last_bt_timestamp = millis();
+    byte op = BT.read();
+    command c = *reinterpret_cast<command*>(&op);
+    Log("Read speed=")(c.speed)(" sector=")(c.sector);
+
+    int left_factor;
+    int right_factor;
+    CalcWheelsSpeed(c.speed, c.sector, left_factor, right_factor);
   }
-
-  bool bNewCommand = false;
-  
-  if ( actionConstrain.check() )
-  {
-    if (reply != '\0')
-    {
-      BT.print(reply);
-      Log("Reply ")(reply);
-      reply = '\0';
-    }
-
-    if (BT.available())
-    {
-      ongoingOp = BT.read();
-      reply = ongoingOp + 'A' - 'a';
-      Log("Fetched command ")(ongoingOp);
-      bNewCommand = true;
-    }
-    else if ((! bIdle) && (ongoingOp != 's'))
-    {
-      Log("No command received, stopping");
-      ongoingOp = 's';
-    }
-  }
-
-  switch (ongoingOp)
-  {
-  case 'f':
-    bOutlookRequired = true;
-    if ( ! ProbeOutlook() )
-    {
-      return;
-    }
-    MoveOp<ForwardTraits>()(bNewCommand);
-    break;
-
-  case 'b':
-    bOutlookRequired = false;
-    MoveOp<BackTraits>()(bNewCommand);
-    break;
-
-  case 'l':
-    bOutlookRequired = false;
-    MoveOp<LeftTraits>()(bNewCommand);
-    break;
-
-  case 'r':
-    bOutlookRequired = false;
-    MoveOp<RightTraits>()(bNewCommand);
-    break;
-    
-  case 's':
-    if (wheelsConstrain.check())
-    {
-      if (wheels.Stop() == Wheels::DONE)
-      {
-        ongoingOp = '\0';
-        reply = 'S';
-        bIdle  = true;
-        bOutlookRequired = false;
-        Log("Accomplished Stop");
-      }
-      else
-      {
-        wheelsConstrain.set(WheelsSpeedStepTime);
-      }
-    }
-    break;
-
-  case '\0':
-    break;
-
-  default:
-    BT.print('X');
-    Log("Reply X");
-    reply = '\0';
-    ongoingOp = '\0';
-    actionConstrain.set(0);
-    break;
-  }  
 }
+
 
