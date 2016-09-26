@@ -44,7 +44,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private final SoundHelper	m_sound			= new SoundHelper();
 
 	private final int			m_imgCount		= 6;
-	private final int			m_dd			= JoystickControl.POWER_MAX / m_imgCount;
+	private final double		m_dd			= 1.0 + JoystickControl.POWER_MAX / m_imgCount;
 	private final int			m_imgId[]		= { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
 
 	private final int			max_count_click	= 5;
@@ -76,13 +76,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 					m_comm = t;
 					m_bth.Send(m_comm);
 				}
-				byte speed =(byte) (t>>4);
+				byte speed = (byte) (t >> 4);
 				if (m_speed != speed)
 				{
 					m_speed = speed;
 					DrawImg(power);
 				}
-				byte sector = (byte) (t&0xF);
+				byte sector = (byte) (t & 0xF);
 				if (m_sector != sector)
 				{
 					m_sector = sector;
