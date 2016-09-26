@@ -14,9 +14,9 @@ const unsigned long MAX_DISTANCE = 35;
   - Pin 10 ---> echo // yellow
   - Pin 11 ---> trig // green
 // blue - vcc
-  - Pin 13 ---> optional signal led
+  - Pin LED_BUILTIN ---> optional signal led
 */
-Outlook outlook(10, 11, MAX_DISTANCE, 13);
+Outlook outlook_head(10, 11, MAX_DISTANCE, LED_BUILTIN);
 
 /*
 
@@ -42,8 +42,7 @@ SoftwareSerial BT(12, 2);
 TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 
 
-TimeConstrain wheelsConstrain("Wheels");
-TimeConstrain actionConstrain("Action");
+TimeConstrain idleConstrain("Wheels");
 TimeConstrain outlookConstrain("Outlook");
 
 bool bIdle;
@@ -57,7 +56,7 @@ void setup()
 
   Log::begin();
 
-  outlook.begin();
+  outlook_head.begin();
   BT.begin(38400);
 
   Log("Ready");
@@ -65,10 +64,8 @@ void setup()
   ongoingOp = '\0';
   reply = '\0';
   
-  wheelsConstrain.set(0);
-  actionConstrain.set(0);
+  idleConstrain.set(0);
   outlookConstrain.set(0);
-  bOutlookRequired = false;
 }
 
 static const unsigned long RunningTime = 500;
@@ -76,148 +73,28 @@ static const unsigned long RotationTime = 120;
 static const unsigned long WheelsSpeedStepTime = 50;
 static const unsigned long pauseBetweenDirectionChanges = 300;
 
-bool ProbeOutlook()
-{
-  if (bOutlookRequired && outlookConstrain.check())
-  {
-    if ( outlook.isInRange() )
-    { 
-      wheels.Brake();
-      bIdle = true;
-      bOutlookRequired = false;
-      while (BT.available())
-      {
-        BT.read();
-      }
-      BT.print('O');
-      Log("Obstacle");
-      reply = '\0';
-      ongoingOp = '\0';
-      return false;
-    }
-    else
-    {
-      outlookConstrain.set(50);    
-    }
-  }
 
-  return true;
-}
-
-struct ForwardTraits
-{
-  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Forward(); }
-  static constexpr unsigned long ActionTime() { return RunningTime; }
-  static constexpr bool OutlookRequired() { return true; }
-  static constexpr const char* Name()  { return "Forward"; }
-};
-
-struct BackTraits
-{
-  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Back(); }
-  static constexpr unsigned long ActionTime() { return RunningTime; }
-  static constexpr bool OutlookRequired() { return false; }
-  static constexpr const char* Name()  { return "Back"; }
-};
-
-struct TurnTraits
-{
-  static constexpr unsigned long ActionTime() { return RotationTime; }
-  static constexpr bool OutlookRequired() { return false; }  
-};
-
-struct LeftTraits : public TurnTraits
-{
-  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Left(); }
-  static constexpr const char* Name()  { return "Left"; }
-};
-
-struct RightTraits : public TurnTraits
-{
-  static Wheels::eCompletion WheelsMotion(Wheels& w) { return w.Right(); }
-  static constexpr const char* Name()  { return "Right"; }
-};
-
-
-template <typename Traits>
-struct MoveOp
-{
-  void operator()(bool bNewCommand)
-  {
-    if (bNewCommand)
-    {
-      wheelsConstrain.set(0);
-      actionConstrain.set(Traits::ActionTime());
-    }
-    
-    if (bNewCommand || wheelsConstrain.check())
-    {
-      const auto wheelsState = Traits::WheelsMotion(wheels);
-      if (wheelsState == Wheels::STARTING)
-      {
-        if (bIdle)
-        {
-          // Going from Idle to Starting triggers action timer
-          actionConstrain.set(Traits::ActionTime());
-        }
-      }
-
-        // New action timer is set when the state goes from STOPPED to STARTING,
-        // hence during the STOPPING phase the actionConstrain is still expired
-        // after the previous operation. We have to prevent another read from BT
-        // until the STARTING begins.
-      if ((wheelsState == Wheels::STOPPING)
-          ||
-          ( ( ! bIdle ) && (wheelsState == Wheels::STOPPED) )
-          )
-      {
-        actionConstrain.set(max(Traits::ActionTime(), WheelsSpeedStepTime));
-      }
-      
-      bIdle = false;
-            
-      if (wheelsState == Wheels::DONE)
-      {
-        ongoingOp = '\0';
-        Log("Accomplished ")(Traits::Name());
-      }
-      else if (wheelsState == Wheels::STOPPED)
-      {
-        wheelsConstrain.set(pauseBetweenDirectionChanges);
-        actionConstrain.set(max(Traits::ActionTime(),pauseBetweenDirectionChanges));
-        bIdle = true;
-      }
-      else
-      {
-        wheelsConstrain.set(WheelsSpeedStepTime);
-      }
-    }
-  }
-};
-
-unsigned long last_bt_timestamp=0;
-
-void CalcWheelsSpeed(int speed, int sector, int& left_factor, int& right_factor)
+void CalcSpeedFactor( unsigned short sector, short& left, short& right)
 {
   if (sector <= 4)
   {
-    left_factor = 2 * speed;
-    right_factor = (2 - sector)*speed;
+    left = 2;
+    right = (2 - sector);
   }
   else if (sector <= 8)
   {
-    left_factor = -2 * speed;
-    right_factor = (6 - sector)*speed;
+    left = -2;
+    right = (6 - sector);
   }
   else if (sector <= 11)
   {
-    left_factor = (sector - 10)*speed;
-    right_factor = -2 * speed;
+    left = (sector - 10);
+    right = -2;
   }
   else if (sector <= 15)
   {
-    left_factor = (sector - 14)*speed;
-    right_factor = 2 * speed;
+    left = (sector - 14);
+    right = 2;
   }
 
   else
@@ -226,19 +103,104 @@ void CalcWheelsSpeed(int speed, int sector, int& left_factor, int& right_factor)
   }
 }
 
+short last_left_speed_factor = 0;
+short last_right_speed_factor = 0;
+unsigned short last_speed = 0;
+
+#include "Response.h"
+
 void loop()
 {
+  short left_speed_factor;
+  short right_speed_factor;
+
+  Response resp;
+  
   if (BT.available())
   {
-    last_bt_timestamp = millis();
+    idleConstrain.set(1000);
     byte op = BT.read();
-    command c = *reinterpret_cast<command*>(&op);
-    Log("Read speed=")(c.speed)(" sector=")(c.sector);
+    Command c{op};
+    Log("Read speed=")(c._speed)(" sector=")(c._sector);
 
-    int left_factor;
-    int right_factor;
-    CalcWheelsSpeed(c.speed, c.sector, left_factor, right_factor);
+    CalcSpeedFactor(c._sector, left_speed_factor, right_speed_factor);
+    Log("LEFT ")(left_speed_factor)(" RIGHT ")(right_speed_factor);
+
+    if ( // direction changed
+        ((last_left_speed_factor ^ left_speed_factor)
+        |
+        (last_right_speed_factor ^ right_speed_factor))
+        != 0
+        )
+    {
+      outlookConstrain.set(0);
+    }
+    
+    last_left_speed_factor = left_speed_factor;
+    last_right_speed_factor = right_speed_factor;
+    last_speed = c._speed;
+    resp = {last_left_speed_factor, last_right_speed_factor};
   }
+
+  if (outlookConstrain.check())
+  {
+    if (left_speed_factor + right_speed_factor != 0)  // neither idle nor pivoting on the center
+    {
+      if (max(left_speed_factor, right_speed_factor) == 2) // going forward
+      {
+        if (outlook_head.isInRange())
+        {
+          resp = Response::HeadObstacle{};
+          ///...
+        }
+      }
+
+      if (min(left_speed_factor, right_speed_factor) == -2) // going reverse
+      {
+        if (/*outlook_tail.isInRange()*/false)
+        {
+          resp = Response::TailObstacle{};
+          ///...
+        }
+      }
+    }
+
+    outlookConstrain.set(50);
+  }
+
+  if (resp.isObstacle())
+  {
+    wheels.Brake();
+    idleConstrain.never();
+    last_left_speed_factor = left_speed_factor = 0;
+    last_right_speed_factor = right_speed_factor = 0;
+    last_speed = 0;
+  }
+  
+  if ((last_left_speed_factor | last_right_speed_factor) != 0)
+  {
+    if (idleConstrain.check())
+    {
+      Log("Idle on timeout");
+      last_left_speed_factor = left_speed_factor = 0;
+      last_right_speed_factor = right_speed_factor = 0;
+      last_speed = 0;
+      outlookConstrain.never();
+      resp = {0, 0};
+    }
+  }
+
+  if (resp.isSet())
+  {
+    BT.print(static_cast<byte>(resp));
+    resp.ToLog();
+    if (! resp.isObstacle() )
+    {
+      wheels.Go(last_speed, 0xf, left_speed_factor, right_speed_factor);
+    }
+  }
+
+ 
 }
 
 

@@ -30,6 +30,13 @@ public:
     Serial.print(s);
     return *this;
   }
+  
+  template<typename T, typename FMT>
+  Log& operator()(T s, FMT f)
+  {
+    Serial.print(s,f);
+    return *this;
+  }
 
   ~Log()
   {
@@ -44,6 +51,7 @@ public:
   Log(){};
   Log(String) {};
   template <typename _T> Log& operator()(_T) {return *this;}
+  template <typename _T, typename _FMT> Log& operator()(_T, _FMT) {return *this;}
   static void begin() {}
 };
 

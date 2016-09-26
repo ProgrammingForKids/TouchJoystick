@@ -1,12 +1,16 @@
 #ifndef _ProgrammingForKids_TouchJoystick__Command_h__
 #define _ProgrammingForKids_TouchJoystick__Command_h__
 
-#pragma pack(push, 1)
-struct command
+struct Command
 {
-  int speed : 4;// 
-  int sector : 4;// 0 - means forward, counting clockwise
+  const unsigned short _sector : 4;// 0 - means forward, counting clockwise
+  const unsigned short _speed : 4;//
+
+  Command(byte b)
+  : _sector(b&0x0f)
+  , _speed((b>>4)&0x0f)
+  {
+  }
 };
-#pragma pack(pop)
 
 #endif // _ProgrammingForKids_TouchJoystick__Command_h__
