@@ -1,16 +1,20 @@
 package com.car.wirelesscontrol.util;
 
 import com.sasa.joystick.JoystickControl;
+import com.sasa.logger.Logger;
 
 public class CommandByteBuilder
 {
-	//-------------------------------------------------
+
+	public static int MAX_NUMBER_OF_SECTORS = 12;
+
+	// -------------------------------------------------
 	// bit 7 -> 0 - forward, 1 - backward
 	// bit 6 -> 0 - right, 1 - left
 	// bits 5,4,3,2 -> forward/backward speed value
 	// bits 1,0 ->right/left speed value
-	//-------------------------------------------------
-	public static byte PrepareCommandByte22(int angle, int power, int direction)
+	// -------------------------------------------------
+	public static byte PrepareCommandByteOld(int angle, int power, int direction)
 	{
 		double Y = power * Math.cos(Math.toRadians(angle));
 		double X = power * Math.sin(Math.toRadians(angle));
@@ -38,20 +42,33 @@ public class CommandByteBuilder
 		return bp;
 	}
 
-	public static byte PrepareCommandByte(int angle, int power)
+	public static byte GetSector(int angle)
 	{
-		byte speed =  (byte) ((power * 16) / JoystickControl.POWER_MAX);
+
+		byte b = (byte) (((angle * MAX_NUMBER_OF_SECTORS + 180.0) / 360.0) % MAX_NUMBER_OF_SECTORS);
+		return b;
+
+	}
+
+	public static byte GetSpeed(int power)
+	{
+		byte speed = (byte) ((power * 16) / JoystickControl.POWER_MAX);
 		if (speed == 16)
 		{
 			speed = 15;
 		}
+		return speed;
+	}
 
-		byte sector =(byte) (((angle*4 + 45)/90)&0x0F);
-		byte res = (byte) (speed<<4 | sector);
+	public static byte PrepareCommandByte(int angle, int power)
+	{
+		byte speed = GetSpeed(power);
+		byte sector = GetSector(angle);
+		Logger.Log.t("ANGLE", sector);
+		byte res = (byte) (speed << 4 | sector);
 		return res;
 	}
 
-	
 	public static String ByteToStr(byte bt)
 	{
 		StringBuilder sb = new StringBuilder();

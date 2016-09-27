@@ -16,7 +16,7 @@ import android.util.Pair;
 public class BluetoothConnectedThread extends Thread
 {
 	private static final UUID	MY_UUID				= UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-	final static int			RECIEVE_MESSAGE		= 1;
+	private final static int	RECIEVE_MESSAGE		= 1;
 	static final String			DefaultDeviceName	= "Unknown";
 	private BluetoothAdapter	mmBluetoothAdapter	= null;
 	private BluetoothDevice		mmBluetoothDevice	= null;
@@ -27,13 +27,11 @@ public class BluetoothConnectedThread extends Thread
 
 	public interface Callback
 	{
-		final char	CONNECT_ERROR		= 'Y';
-		final char	SOCKET_CLOSED		= 'Z';
-		final char	STOP_PERFORMANCE	= 'S';
-		final char	STOP_OBSTACLE		= 'O';
-		final char	PERFORM_ERROR		= 'E';
+		final byte	CONNECT_ERROR		= 'Y';
+		final byte	SOCKET_CLOSED		= 'Z';
+		final byte	PERFORM_ERROR		= 'E';
 
-		void BluetoothRespose(char c);
+		void BluetoothRespose(byte c);
 
 		void ShowBluetoothStatus();
 
@@ -112,8 +110,7 @@ public class BluetoothConnectedThread extends Thread
 		}
 		InputStream tmpIn = null;
 		OutputStream tmpOut = null;
-		// Get the input and output streams, using temp objects because
-		// member streams are final
+
 		try
 		{
 			tmpIn = mmSocket.getInputStream();
@@ -145,7 +142,7 @@ public class BluetoothConnectedThread extends Thread
 			}
 			catch (IOException connectException)
 			{
-				Logger.Log.e("mmSocket.connect()", "is failed");
+				Logger.Log.e("mmSocket.connect()", connectException.getMessage());
 				try
 				{
 					if (null != mmSocket)
@@ -155,7 +152,7 @@ public class BluetoothConnectedThread extends Thread
 				}
 				catch (IOException closeException)
 				{
-					Logger.Log.t("mmSocket.close()", "is failed");
+					Logger.Log.t("mmSocket.close()", closeException.getMessage());
 				}
 
 				mCallback.BluetoothRespose(Callback.CONNECT_ERROR);
@@ -310,8 +307,12 @@ public class BluetoothConnectedThread extends Thread
 			{
 				case BlueToothHelper.RECIEVE_MESSAGE:
 					byte[] readBuf = (byte[]) msg.obj;
-					String strIncom = new String(readBuf, 0, msg.arg1);
-					mCallback.BluetoothRespose(strIncom.charAt(0));
+					if (readBuf.length > 0)
+					{
+						mCallback.BluetoothRespose(readBuf[0]);
+					}
+					// String strIncom = new String(readBuf, 0, msg.arg1);
+					// mCallback.BluetoothRespose(strIncom.charAt(0));
 					break;
 				default:
 					break;

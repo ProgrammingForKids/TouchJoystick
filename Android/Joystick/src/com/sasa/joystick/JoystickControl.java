@@ -43,6 +43,8 @@ public class JoystickControl extends View implements Runnable
 	private int						lastAngle				= 0;
 	private int						lastPower				= 0;
 
+	private boolean					m_angleRangeMode360		= false;
+
 	public JoystickControl(Context context)
 	{
 		super(context);
@@ -52,6 +54,11 @@ public class JoystickControl extends View implements Runnable
 	{
 		super(context, attrs);
 		initJoystickView();
+	}
+
+	public void SetAngleRangeMode(boolean b360)
+	{
+		m_angleRangeMode360 = b360;
 	}
 
 	public JoystickControl(Context context, AttributeSet attrs, int defaultStyle)
@@ -228,6 +235,19 @@ public class JoystickControl extends View implements Runnable
 	}
 
 	private int getAngle()
+	{
+		int alpha = getAngle180();
+		if(m_angleRangeMode360)
+		{
+			if (0 > alpha)
+			{
+				return 360 + alpha;
+			}
+		}
+		return alpha;
+	}
+
+	private int getAngle180()
 	{
 		if (xPosition > centerX)
 		{
