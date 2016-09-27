@@ -49,7 +49,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private final int			m_imgCount		= 6;
 	private final double		m_dd			= 1.0 + JoystickControl.POWER_MAX / m_imgCount;
-	private final int			m_imgId[]		= { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
+	//private final int			m_imgId[]		= { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
+	private final int			m_imgId[]			= { R.drawable.c0, R.drawable.c1, R.drawable.c2, R.drawable.c3, R.drawable.c4, R.drawable.c5, R.drawable.c6, R.drawable.c7 };
 
 	private final int			max_count_click	= 5;
 	private int					m_count_click	= 0;
@@ -101,17 +102,19 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 					SetPrompt("\u21fd" + CommandByteBuilder.ByteToStr(m_comm) + "\n");
 
 				}
-				byte speed = (byte) (t >> 4);
-				if (m_speed != speed)
-				{
-					m_speed = speed;
-					DrawImg(power);
-				}
+				// byte speed = (byte) (t >> 4);
+				// if (m_speed != speed)
+				// {
+				//
+				// m_speed = speed;
+				// DrawImg(power);
+				// }
 				byte sector = (byte) (t & 0xF);
 				if (m_sector != sector)
 				{
 					m_sector = sector;
-					mImageView.setRotation(angle);
+					ShowImage();
+					// mImageView.setRotation(angle);
 				}
 				String res = "";
 				res = " " + CommandByteBuilder.ByteToStr(m_comm);
@@ -350,6 +353,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
+	}
+
+	private void ShowImage()
+	{
+		int k = CommandByteBuilder.Sector();
+		Logger.Log.t("RUMB", k);
+		mImageView.setImageResource(m_imgId[k]);
 	}
 
 	void DrawImg(int power)

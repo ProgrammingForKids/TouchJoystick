@@ -5,7 +5,13 @@ import com.sasa.joystick.JoystickControl;
 public class CommandByteBuilder
 {
 
-	public static int MAX_NUMBER_OF_SECTORS = 8;
+	public static int	MAX_NUMBER_OF_SECTORS	= 8;
+	private static byte	m_sec;
+
+	public static byte Sector()
+	{
+		return m_sec;
+	}
 
 	// -------------------------------------------------
 	// bit 7 -> 0 - forward, 1 - backward
@@ -45,6 +51,7 @@ public class CommandByteBuilder
 	{
 
 		byte b = (byte) (((angle * MAX_NUMBER_OF_SECTORS + 180.0) / 360.0) % MAX_NUMBER_OF_SECTORS);
+		m_sec = b;
 		return b;
 
 	}
@@ -61,9 +68,9 @@ public class CommandByteBuilder
 
 	public static byte PrepareCommandByte(int angle, int power)
 	{
-		byte[] lut= {0,1,3,5,6,7,9,11};
+		byte[] lut = { 0, 1, 3, 5, 6, 7, 9, 11 };
 		byte speed = GetSpeed(power);
-		byte sector = lut[GetSector(angle)];////GetSector(angle);
+		byte sector = lut[GetSector(angle)];//// GetSector(angle);
 		byte res = (byte) (speed << 4 | sector);
 		return res;
 	}
@@ -76,7 +83,7 @@ public class CommandByteBuilder
 			sb.append((bt >> (7 - k)) & 1);
 		}
 		String x = Integer.toHexString(bt & 0xFF);
-		return sb.toString() + " : " + bt +" : "+ x;
+		return sb.toString() + " : " + bt + " : " + x;
 	}
 
 }// class CommandByteBuilder
