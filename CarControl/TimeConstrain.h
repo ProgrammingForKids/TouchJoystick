@@ -21,6 +21,12 @@ public:
     Log("Constrain ")(_name)(" set to +")(period);
   }
 
+  void never()
+  {
+    _threshold = 0;
+    -- _threshold; // underflow to MAX_ULONG
+  }
+
   bool check() const
   {
     return _threshold < millis();
