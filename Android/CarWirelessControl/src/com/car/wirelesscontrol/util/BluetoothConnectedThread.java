@@ -27,9 +27,9 @@ public class BluetoothConnectedThread extends Thread
 
 	public interface Callback
 	{
-		final byte	CONNECT_ERROR		= 'Y';
-		final byte	SOCKET_CLOSED		= 'Z';
-		final byte	PERFORM_ERROR		= 'E';
+		final byte	CONNECT_ERROR	= 'Y';
+		final byte	SOCKET_CLOSED	= 'Z';
+		final byte	PERFORM_ERROR	= 'E';
 
 		void BluetoothRespose(byte c);
 
@@ -306,10 +306,11 @@ public class BluetoothConnectedThread extends Thread
 			switch (msg.what)
 			{
 				case BlueToothHelper.RECIEVE_MESSAGE:
+					int length = msg.arg1; 
 					byte[] readBuf = (byte[]) msg.obj;
-					if (readBuf.length > 0)
+					for (int k = 0; k < length; ++k)
 					{
-						mCallback.BluetoothRespose(readBuf[0]);
+						mCallback.BluetoothRespose(readBuf[k]);
 					}
 					// String strIncom = new String(readBuf, 0, msg.arg1);
 					// mCallback.BluetoothRespose(strIncom.charAt(0));

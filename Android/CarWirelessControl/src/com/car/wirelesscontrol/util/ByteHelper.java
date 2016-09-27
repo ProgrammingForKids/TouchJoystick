@@ -78,8 +78,14 @@ public class ByteHelper
 	
 	public void test(byte b)
 	{
+//		byte bb = 24;
+//		String ros = toString((byte) bb);
+//		String kak = Integer.toHexString(bb & 0xFF);
 		String s = "11111111";
 		Set(s);
+		
+//		String kak = Integer.toHexString(m_byte & 0xFF);
+		
 		byte err = (byte)(m_byte & 0xC0);
 		err = (byte) (err>>6 & 2);
 		String res = toString(err);

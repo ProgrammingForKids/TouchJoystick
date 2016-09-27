@@ -1,12 +1,11 @@
 package com.car.wirelesscontrol.util;
 
 import com.sasa.joystick.JoystickControl;
-import com.sasa.logger.Logger;
 
 public class CommandByteBuilder
 {
 
-	public static int MAX_NUMBER_OF_SECTORS = 12;
+	public static int MAX_NUMBER_OF_SECTORS = 8;
 
 	// -------------------------------------------------
 	// bit 7 -> 0 - forward, 1 - backward
@@ -62,9 +61,9 @@ public class CommandByteBuilder
 
 	public static byte PrepareCommandByte(int angle, int power)
 	{
+		byte[] lut= {0,1,3,5,6,7,9,11};
 		byte speed = GetSpeed(power);
-		byte sector = GetSector(angle);
-		Logger.Log.t("ANGLE", sector);
+		byte sector = lut[GetSector(angle)];////GetSector(angle);
 		byte res = (byte) (speed << 4 | sector);
 		return res;
 	}
@@ -76,7 +75,8 @@ public class CommandByteBuilder
 		{
 			sb.append((bt >> (7 - k)) & 1);
 		}
-		return sb.toString();
+		String x = Integer.toHexString(bt & 0xFF);
+		return sb.toString() + " : " + bt +" : "+ x;
 	}
 
 }// class CommandByteBuilder

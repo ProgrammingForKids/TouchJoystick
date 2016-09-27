@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,9 +25,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -51,7 +54,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private int					m_count_click	= 0;
 	private boolean				mTrace			= false;
 	private MenuItem			m_adlistItem	= null;
-	private MenuItem			m_actCurrent;
+	private MenuItem			m_actCurrent	= null;
+	private TextView			m_prompt		= null;
+	private LinearLayout		m_traceArea		= null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -60,6 +65,22 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		setContentView(R.layout.activity_main);
 		m_bth = new BlueToothHelper(this, this);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
+		
+		m_traceArea = (LinearLayout) findViewById(R.id.traceArea);
+		m_prompt = (TextView) findViewById(R.id.promptTextView);
+		m_prompt.setMovementMethod(new ScrollingMovementMethod());
+		// clear prompt area if LongClick
+		m_prompt.setOnLongClickListener(new OnLongClickListener()
+		{
+
+			@Override
+			public boolean onLongClick(View v)
+			{
+				m_prompt.setText("");
+				return true;
+			}
+		});
+		m_traceArea.setVisibility((mTrace) ? View.VISIBLE : View.GONE);
 		mImageView = (ImageView) findViewById(R.id.carImageView);
 
 		m_joystick = (JoystickControl) findViewById(R.id.joystickView);
@@ -76,6 +97,8 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				{
 					m_comm = t;
 					m_bth.Send(m_comm);
+					SetPrompt("\u21fd"+CommandByteBuilder.ByteToStr(m_comm) + "\n");
+
 				}
 				byte speed = (byte) (t >> 4);
 				if (m_speed != speed)
@@ -214,9 +237,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		if (id == R.id.action_settings)
 		{
 			m_count_click = 0;
-			ByteHelper bh = new ByteHelper();
-			bh.test((byte) 0);
-			//ShowBondedDeviceList();
+			// ByteHelper bh = new ByteHelper();
+			// bh.test((byte) 0);
+			ShowBondedDeviceList();
 		}
 		else if (id == R.id.action_devices_list)
 		{
@@ -238,6 +261,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 						int iconId = (mTrace) ? R.drawable.debug : R.drawable.runtime;
 						m_actCurrent.setIcon(iconId);
 					}
+					if (null != m_traceArea)
+					{
+						m_traceArea.setVisibility((mTrace) ? View.VISIBLE : View.GONE);
+					}
 					m_adlistItem.setVisible(mTrace);
 				}
 				m_count_click = 0;
@@ -255,9 +282,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		{
 			public void run()
 			{
-				// ResposeToUiThread(c);
+				ResposeToUiThread(c);
 			}
 		});
+	}
+
+	private void ResposeToUiThread(byte b)
+	{
+		SetPrompt("\u21fe"+CommandByteBuilder.ByteToStr(b) + "\n");
 	}
 
 	void ShowDevices(final ArrayList<String> list)
@@ -323,4 +355,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		}
 	}
 
+	public void SetPrompt(String txt)
+	{
+		if (m_prompt.isShown())
+		{
+			String str = m_prompt.getText().toString();
+			m_prompt.setText(txt + str);
+		}
+
+	}
 }// class MainActivity

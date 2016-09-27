@@ -12,5 +12,6 @@
     <string name="angle">Angle:</string>
     <string name="power">Power:</string>
     <string name="direct">Direction:</string>
+    <string name="arrow">\u2326</string>
 
 </resources>
