@@ -45,11 +45,6 @@ TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 TimeConstrain idleConstrain("Wheels");
 TimeConstrain outlookConstrain("Outlook");
 
-bool bIdle;
-char ongoingOp;
-char reply;
-bool bOutlookRequired;
-
 void setup()
 {
   wheels.begin();
@@ -58,49 +53,33 @@ void setup()
 
   outlook_head.begin();
   BT.begin(38400);
-
+  
   Log("Ready");
-  bIdle = true;
-  ongoingOp = '\0';
-  reply = '\0';
   
   idleConstrain.set(0);
   outlookConstrain.set(0);
 }
 
-static const unsigned long RunningTime = 500;
-static const unsigned long RotationTime = 120;
-static const unsigned long WheelsSpeedStepTime = 50;
-static const unsigned long pauseBetweenDirectionChanges = 300;
-
-
 void CalcSpeedFactor( unsigned short sector, short& left, short& right)
 {
-  if (sector <= 4)
-  {
-    left = 2;
-    right = (2 - sector);
-  }
-  else if (sector <= 8)
-  {
-    left = -2;
-    right = (6 - sector);
-  }
-  else if (sector <= 11)
-  {
-    left = (sector - 10);
-    right = -2;
-  }
-  else if (sector <= 15)
-  {
-    left = (sector - 14);
-    right = 2;
-  }
+  const static short lut[12][2] = {
+    {2, 2},
+    {2, 1},
+    {2, 0},
+    {2, -2},
+    {-2, 0},
+    {-2, -1},
+    {-2, -2},
+    {-1, -2},
+    { 0, -2},
+    { -2, 2},
+    { 0, 2},
+    { 1, 2}
+  };
 
-  else
-  {
-    Log("BAD SECTOR ")(sector);
-  }
+  sector %= 12;
+  left = lut[sector][0];
+  right = lut[sector][1];
 }
 
 short last_left_speed_factor = 0;
@@ -192,7 +171,9 @@ void loop()
 
   if (resp.isSet())
   {
-    BT.print(static_cast<byte>(resp));
+    byte b = resp;
+    BT.write(b);
+    Log("Sent 0x")(b, HEX);
     resp.ToLog();
     if (! resp.isObstacle() )
     {

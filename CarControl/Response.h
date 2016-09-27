@@ -29,15 +29,19 @@ private:
 
 public:
   Response()
-  : _isSet(false)
+  : _obstacle1(0)
+  , _obstacle2(0)
+  , _left(Idle)
+  , _right(Idle)
+  , _isSet(false)
   {
   }
 
   Response(HeadObstacle)
   : _obstacle1(1)
   , _obstacle2(0)
-  , _left(0)
-  , _right(0)
+  , _left(Idle)
+  , _right(Idle)
   , _isSet(true)
   {
   }
@@ -45,8 +49,8 @@ public:
   Response(TailObstacle)
   : _obstacle1(0)
   , _obstacle2(1)
-  , _left(0)
-  , _right(0)
+  , _left(Idle)
+  , _right(Idle)
   , _isSet(true)
   {
   }
@@ -54,8 +58,8 @@ public:
   Response(HeadObstacle, TailObstacle)
   : _obstacle1(1)
   , _obstacle2(1)
-  , _left(0)
-  , _right(0)
+  , _left(Idle)
+  , _right(Idle)
   , _isSet(true)
   {
   }
@@ -63,8 +67,8 @@ public:
   Response(short left, short right)
   : _obstacle1(0)
   , _obstacle2(0)
-  , _left(left+2)
-  , _right(right+2)
+  , _left(static_cast<eSpeed>(left+2))
+  , _right(static_cast<eSpeed>(right+2))
   , _isSet(true)
   {
   }
