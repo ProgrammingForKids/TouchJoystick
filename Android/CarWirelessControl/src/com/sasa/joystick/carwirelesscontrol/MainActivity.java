@@ -37,6 +37,7 @@ import android.widget.AdapterView.OnItemClickListener;
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
 	private BlueToothHelper		m_bth			= null;
+	private CommandSender		m_csend			= null;
 	private BroadcastReceiver	m_receiver		= null;
 	private JoystickControl		m_joystick		= null;
 	private TextView			m_byte_command	= null;
@@ -64,8 +65,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		m_bth = new BlueToothHelper(this, this);
+		m_csend = new CommandSender(m_bth);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
-		
+
 		m_traceArea = (LinearLayout) findViewById(R.id.traceArea);
 		m_prompt = (TextView) findViewById(R.id.promptTextView);
 		m_prompt.setMovementMethod(new ScrollingMovementMethod());
@@ -91,13 +93,12 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			@Override
 			public void onValueChanged(int angle, int power, int direction)
 			{
-				String res = "";
 				byte t = CommandByteBuilder.PrepareCommandByte(angle, power);
 				if (m_comm != t)
 				{
 					m_comm = t;
-					m_bth.Send(m_comm);
-					SetPrompt("\u21fd"+CommandByteBuilder.ByteToStr(m_comm) + "\n");
+					m_csend.Send(m_comm);
+					SetPrompt("\u21fd" + CommandByteBuilder.ByteToStr(m_comm) + "\n");
 
 				}
 				byte speed = (byte) (t >> 4);
@@ -112,6 +113,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 					m_sector = sector;
 					mImageView.setRotation(angle);
 				}
+				String res = "";
 				res = " " + CommandByteBuilder.ByteToStr(m_comm);
 				res += ("; " + String.valueOf(angle) + "°");
 				res += ("; " + String.valueOf(power) + "%");
@@ -162,6 +164,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	public void onResume()
 	{
 		super.onResume();
+		if (null != m_csend)
+		{
+			m_csend.Start();
+		}
 		m_sound.Create(this);
 		if (null != m_bth)
 		{
@@ -176,6 +182,10 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	protected void onPause()
 	{
 		super.onPause();
+		if (null != m_csend)
+		{
+			m_csend.Start();
+		}
 		m_sound.Release();
 	}
 
@@ -289,7 +299,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	private void ResposeToUiThread(byte b)
 	{
-		SetPrompt("\u21fe"+CommandByteBuilder.ByteToStr(b) + "\n");
+		SetPrompt("\u21fe" + CommandByteBuilder.ByteToStr(b) + "\n");
 	}
 
 	void ShowDevices(final ArrayList<String> list)
