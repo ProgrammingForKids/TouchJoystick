@@ -63,6 +63,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		mImageView = (ImageView) findViewById(R.id.carImageView);
 
 		m_joystick = (JoystickControl) findViewById(R.id.joystickView);
+		m_joystick.SetAngleRangeMode(true);
 		m_joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
 		{
 
@@ -156,12 +157,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	}
 
 	@Override
-	protected void onStop()
-	{
-		super.onStop();
-	}
-
-	@Override
 	protected void onDestroy()
 	{
 		super.onDestroy();
@@ -219,7 +214,9 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		if (id == R.id.action_settings)
 		{
 			m_count_click = 0;
-			ShowBondedDeviceList();
+			ByteHelper bh = new ByteHelper();
+			bh.test((byte) 0);
+			//ShowBondedDeviceList();
 		}
 		else if (id == R.id.action_devices_list)
 		{
@@ -251,7 +248,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	}
 
 	@Override
-	public void BluetoothResponse(final char c)
+	public void BluetoothResponse(final byte c)
 	{
 		Logger.Log.t(c);
 		this.runOnUiThread(new Runnable()
@@ -312,12 +309,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
 	}
-	//
-	// private void Preview(int angle, int power)
-	// {
-	// DrawImg(power);
-	// mImageView.setRotation(angle);
-	// }
 
 	void DrawImg(int power)
 	{
