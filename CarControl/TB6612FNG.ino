@@ -120,6 +120,18 @@ void TB6612FNG::Go(unsigned short speedStep, unsigned short MaxSpeedStep, short 
     return;
   }
 
+  if (0 == (leftFactor | rightFactor))
+  {
+    Log("TB6612FNG::Go received left==right==0, stopping");
+    doStandby();
+    return;
+  }
+
+  doEnable();
+  _mLeft.Set(leftFactor * 255 / 2);
+  _mRight.Set(rightFactor * 255 / 2);
+  return;
+
   static const int FIRST_GEAR=64;
   static const int MAX_SPEED=255;
   // all speed steps must fit in FIRST_GEAR ... MAX_SPEED range
