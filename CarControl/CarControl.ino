@@ -45,11 +45,6 @@ TB6612FNG wheels(3, 4, 5, 6, 7, 8, 9);
 TimeConstrain idleConstrain("Wheels");
 TimeConstrain outlookConstrain("Outlook");
 
-bool bIdle;
-char ongoingOp;
-char reply;
-bool bOutlookRequired;
-
 void setup()
 {
   wheels.begin();
@@ -60,19 +55,10 @@ void setup()
   BT.begin(38400);
 
   Log("Ready");
-  bIdle = true;
-  ongoingOp = '\0';
-  reply = '\0';
   
   idleConstrain.set(0);
   outlookConstrain.set(0);
 }
-
-static const unsigned long RunningTime = 500;
-static const unsigned long RotationTime = 120;
-static const unsigned long WheelsSpeedStepTime = 50;
-static const unsigned long pauseBetweenDirectionChanges = 300;
-
 
 void CalcSpeedFactor( unsigned short sector, short& left, short& right)
 {
