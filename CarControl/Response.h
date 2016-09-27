@@ -29,7 +29,11 @@ private:
 
 public:
   Response()
-  : _isSet(false)
+  : _obstacle1(0)
+  , _obstacle2(0)
+  , _left(Idle)
+  , _right(Idle)
+  , _isSet(false)
   {
   }
 
