@@ -53,7 +53,7 @@ void setup()
 
   outlook_head.begin();
   BT.begin(38400);
-
+  
   Log("Ready");
   
   idleConstrain.set(0);
@@ -62,31 +62,24 @@ void setup()
 
 void CalcSpeedFactor( unsigned short sector, short& left, short& right)
 {
-  if (sector <= 4)
-  {
-    left = 2;
-    right = (2 - sector);
-  }
-  else if (sector <= 8)
-  {
-    left = -2;
-    right = (6 - sector);
-  }
-  else if (sector <= 11)
-  {
-    left = (sector - 10);
-    right = -2;
-  }
-  else if (sector <= 15)
-  {
-    left = (sector - 14);
-    right = 2;
-  }
+  const static short lut[12][2] = {
+    {2, 2},
+    {2, 1},
+    {2, 0},
+    {2, -2},
+    {-2, 0},
+    {-2, -1},
+    {-2, -2},
+    {-1, -2},
+    { 0, -2},
+    { -2, 2},
+    { 0, 2},
+    { 1, 2}
+  };
 
-  else
-  {
-    Log("BAD SECTOR ")(sector);
-  }
+  sector %= 12;
+  left = lut[sector][0];
+  right = lut[sector][1];
 }
 
 short last_left_speed_factor = 0;
@@ -178,7 +171,9 @@ void loop()
 
   if (resp.isSet())
   {
-    BT.print(static_cast<byte>(resp));
+    byte b = resp;
+    BT.write(b);
+    Log("Sent 0x")(b, HEX);
     resp.ToLog();
     if (! resp.isObstacle() )
     {
