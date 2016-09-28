@@ -90,27 +90,28 @@ unsigned short last_speed = 0;
 
 void loop()
 {
-  short left_speed_factor;
-  short right_speed_factor;
-
   Response resp;
   
   if (BT.available())
   {
+    short left_speed_factor = 0;
+    short right_speed_factor = 0;
     idleConstrain.set(1000);
     byte op = BT.read();
     Command c{op};
     Log("Read speed=")(c._speed)(" sector=")(c._sector);
 
-    CalcSpeedFactor(c._sector, left_speed_factor, right_speed_factor);
+    if (c._speed > 0)
+    {
+      CalcSpeedFactor(c._sector, left_speed_factor, right_speed_factor);
+    }
     Log("LEFT ")(left_speed_factor)(" RIGHT ")(right_speed_factor);
 
     if ( // direction changed
-        ((last_left_speed_factor ^ left_speed_factor)
-        |
-        (last_right_speed_factor ^ right_speed_factor))
-        != 0
-        )
+        ((last_left_speed_factor != left_speed_factor)
+        ||
+        (last_right_speed_factor != right_speed_factor))
+       )
     {
       outlookConstrain.set(0);
     }
@@ -123,9 +124,9 @@ void loop()
 
   if (outlookConstrain.check())
   {
-    if (left_speed_factor + right_speed_factor != 0)  // neither idle nor pivoting on the center
+    if (last_left_speed_factor + last_right_speed_factor != 0)  // neither idle nor pivoting on the center
     {
-      if (max(left_speed_factor, right_speed_factor) == 2) // going forward
+      if (max(last_left_speed_factor, last_right_speed_factor) == 2) // going forward
       {
         if (outlook_head.isInRange())
         {
@@ -134,7 +135,7 @@ void loop()
         }
       }
 
-      if (min(left_speed_factor, right_speed_factor) == -2) // going reverse
+      if (min(last_left_speed_factor, last_right_speed_factor) == -2) // going reverse
       {
         if (/*outlook_tail.isInRange()*/false)
         {
@@ -151,8 +152,8 @@ void loop()
   {
     wheels.Brake();
     idleConstrain.never();
-    last_left_speed_factor = left_speed_factor = 0;
-    last_right_speed_factor = right_speed_factor = 0;
+    last_left_speed_factor = 0;
+    last_right_speed_factor = 0;
     last_speed = 0;
   }
   
@@ -161,8 +162,9 @@ void loop()
     if (idleConstrain.check())
     {
       Log("Idle on timeout");
-      last_left_speed_factor = left_speed_factor = 0;
-      last_right_speed_factor = right_speed_factor = 0;
+
+      last_left_speed_factor = 0;
+      last_right_speed_factor = 0;
       last_speed = 0;
       outlookConstrain.never();
       resp = {0, 0};
@@ -177,7 +179,7 @@ void loop()
     resp.ToLog();
     if (! resp.isObstacle() )
     {
-      wheels.Go(last_speed, 0xf, left_speed_factor, right_speed_factor);
+      wheels.Go(last_speed, 0xf, last_right_speed_factor, last_right_speed_factor);
     }
   }
 
