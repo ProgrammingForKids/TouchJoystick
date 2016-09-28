@@ -43,14 +43,14 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	private TextView			m_byte_command	= null;
 	private ImageView			mImageView		= null;
 	private byte				m_comm			= 0;
-	private byte				m_speed			= 0;
-	private byte				m_sector		= 0;
+//	private byte				m_speed			= 0;
+//	private byte				m_sector		= 0;
 	private final SoundHelper	m_sound			= new SoundHelper();
 
 	private final int			m_imgCount		= 6;
 	private final double		m_dd			= 1.0 + JoystickControl.POWER_MAX / m_imgCount;
-	//private final int			m_imgId[]		= { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
-	private final int			m_imgId[]			= { R.drawable.c0, R.drawable.c1, R.drawable.c2, R.drawable.c3, R.drawable.c4, R.drawable.c5, R.drawable.c6, R.drawable.c7 };
+	// private final int m_imgId[] = { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
+	private final int			m_imgId[]		= { R.drawable.c0, R.drawable.c1, R.drawable.c2, R.drawable.c3, R.drawable.c4, R.drawable.c5, R.drawable.c6, R.drawable.c7 };
 
 	private final int			max_count_click	= 5;
 	private int					m_count_click	= 0;
@@ -109,13 +109,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 				// m_speed = speed;
 				// DrawImg(power);
 				// }
-				byte sector = (byte) (t & 0xF);
-				if (m_sector != sector)
-				{
-					m_sector = sector;
-					ShowImage();
-					// mImageView.setRotation(angle);
-				}
+				// byte sector = (byte) (t & 0xF);
+				// if (m_sector != sector)
+				// {
+				// m_sector = sector;
+				// ShowImage();
+				// // mImageView.setRotation(angle);
+				// }
 				String res = "";
 				res = " " + CommandByteBuilder.ByteToStr(m_comm);
 				res += ("; " + String.valueOf(angle) + "°");
@@ -290,7 +290,11 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 	@Override
 	public void BluetoothResponse(final byte c)
 	{
-		Logger.Log.t(c);
+		Logger.Log.t("SEND RESPONSE", Integer.toHexString(c & 0xFF));
+		if ((0 != ((c >> 7) & 1)) || (0 != ((c >> 6) & 1)))
+		{
+			m_csend.StopSending();
+		}
 		this.runOnUiThread(new Runnable()
 		{
 			public void run()
@@ -355,13 +359,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 
 	}
 
-	private void ShowImage()
-	{
-		int k = CommandByteBuilder.Sector();
-		Logger.Log.t("RUMB", k);
-		mImageView.setImageResource(m_imgId[k]);
-	}
-
+//	private void ShowImage()
+//	{
+//		 int k = CommandByteBuilder.Sector();
+//		 Logger.Log.t("RUMB", k);
+//		 mImageView.setImageResource(m_imgId[k]);
+//	}
+//
 	void DrawImg(int power)
 	{
 

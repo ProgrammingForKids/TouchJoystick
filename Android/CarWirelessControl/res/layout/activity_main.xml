@@ -64,7 +64,8 @@
             android:layout_margin="10dp"
             android:background="@drawable/circle_layout"
             android:gravity="center_horizontal"
-            android:orientation="vertical" >
+            android:orientation="vertical"
+            android:visibility="gone" >
 
             <ImageView
                 android:id="@+id/carImageView"
