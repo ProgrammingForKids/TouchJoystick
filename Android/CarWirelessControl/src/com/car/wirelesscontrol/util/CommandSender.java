@@ -6,12 +6,12 @@ import com.sasa.logger.Logger;
 
 public class CommandSender
 {
-	public static int		Timeout	= 1000;				// msec
-	private BlueToothHelper	m_bth	= null;
-	private boolean			m_brun	= true;
-	private byte			m_byte	= 0;
-
-	Stack<Byte>				cmd		= new Stack<Byte>();
+	public final int		Timeout			= 1000;				// msec
+	private BlueToothHelper	m_bth			= null;
+	private boolean			m_brun			= true;
+	private byte			m_byte			= 0;
+	private byte			m_last_sended	= 1;
+	Stack<Byte>				cmd				= new Stack<Byte>();
 
 	public CommandSender(final BlueToothHelper bth)
 	{
@@ -29,7 +29,7 @@ public class CommandSender
 		if (null != m_bth)
 		{
 			m_bth.Send(m_byte);
-			Logger.Log.t("SEND",Integer.toHexString(m_byte & 0xFF));
+			Logger.Log.t("SEND", Integer.toHexString(m_byte & 0xFF));
 		}
 
 	}
@@ -48,16 +48,23 @@ public class CommandSender
 					try
 					{
 						Thread.sleep(Timeout);
+						int size = cmd.size();
+						if (0 < size)
+						{
+							m_byte = cmd.pop();
+						}
+						if (0 == m_byte && 0 == m_last_sended)
+						{
+							continue;
+						}
+						__Send();
+						m_last_sended = m_byte;
+
 					}
 					catch (InterruptedException e)
 					{
+						Logger.Log.t("SEND", e.getMessage());
 					}
-					int size = cmd.size();
-					if (0 < size)
-					{
-						m_byte = cmd.pop();
-					}
-					__Send();
 				}
 			}
 		}, "CommandSender").start();

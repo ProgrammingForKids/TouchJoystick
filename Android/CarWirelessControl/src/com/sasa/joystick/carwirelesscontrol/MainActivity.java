@@ -187,7 +187,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		super.onPause();
 		if (null != m_csend)
 		{
-			m_csend.Start();
+			m_csend.Stop();
 		}
 		m_sound.Release();
 	}
