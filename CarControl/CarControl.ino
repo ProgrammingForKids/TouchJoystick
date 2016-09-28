@@ -122,9 +122,9 @@ void loop()
     resp = {last_left_speed_factor, last_right_speed_factor};
   }
 
-  if (outlookConstrain.check())
+  if (last_left_speed_factor + last_right_speed_factor != 0)  // neither idle nor pivoting on the center
   {
-    if (last_left_speed_factor + last_right_speed_factor != 0)  // neither idle nor pivoting on the center
+    if (outlookConstrain.check())
     {
       if (max(last_left_speed_factor, last_right_speed_factor) == 2) // going forward
       {
