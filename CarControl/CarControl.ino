@@ -179,7 +179,7 @@ void loop()
     resp.ToLog();
     if (! resp.isObstacle() )
     {
-      wheels.Go(last_speed, 0xf, last_right_speed_factor, last_right_speed_factor);
+      wheels.Go(last_speed, 0xf, last_left_speed_factor, last_right_speed_factor);
     }
   }
 
