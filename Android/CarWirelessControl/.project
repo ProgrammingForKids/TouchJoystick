@@ -3,6 +3,8 @@
 	<name>CarWirelessControl</name>
 	<comment></comment>
 	<projects>
+		<project>Joystick</project>
+		<project>Logger</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
