@@ -143,9 +143,8 @@ void loop()
           ///...
         }
       }
+      outlookConstrain.set(50);
     }
-
-    outlookConstrain.set(50);
   }
 
   if (resp.isObstacle())
