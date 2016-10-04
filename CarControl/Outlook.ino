@@ -1,13 +1,14 @@
 #include "Outlook.h"
 #include "Log.h"
 
-Outlook::Outlook(int echo, int trig, unsigned long range, int led)
-: _pinEcho(echo)
+Outlook::Outlook(String name, int echo, int trig, unsigned long range, int led)
+: _name(name)
+, _pinEcho(echo)
 , _pinTrig(trig)
 , _delay_for_range(range * 1000 * 1000 * 2 / 100 / 340)
 , _pinLed(led)
 {
-  Log("DURATION set to ")(_delay_for_range)(" for range of ")(range)(" cm");
+  Log("Outlook ")(_name)(" DURATION set to ")(_delay_for_range)(" for range of ")(range)(" cm");
 }
 
 void Outlook::begin()
@@ -38,7 +39,7 @@ bool Outlook::isInRange()
   //pinMode(_pinEcho, INPUT);
   unsigned long duration = pulseIn(_pinEcho, HIGH, _delay_for_range * 10);
 
-  Log("Duration =")(duration);
+  Log("Outlook ")(_name)(" Duration =")(duration);
 
   bool retval = (duration > 0 && duration <= _delay_for_range );
   

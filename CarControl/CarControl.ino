@@ -16,7 +16,16 @@ const unsigned long MAX_DISTANCE = 35;
 // blue - vcc
   - Pin LED_BUILTIN ---> optional signal led
 */
-Outlook outlook_head(16, 15, MAX_DISTANCE, LED_BUILTIN);
+Outlook outlook_head("Head", 16, 15, MAX_DISTANCE, LED_BUILTIN);
+
+/*
+ * Ultrasonic sensor 2
+  - Pin 11  ---> echo // white
+  - Pin 10  ---> trig // brown
+// red - vcc, black - gnd
+  - Pin LED_BUILTIN ---> optional signal led
+*/
+Outlook outlook_tail("Tail", 11, 10, MAX_DISTANCE, LED_BUILTIN);
 
 /*  Bluetooth
   - Pin 14(A0) ---> TX // purple
@@ -50,6 +59,7 @@ void setup()
   Log::begin();
 
   outlook_head.begin();
+  outlook_tail.begin();
   BT.begin(38400);
   
   Log("Ready");
@@ -135,7 +145,7 @@ void loop()
 
       if (min(last_left_speed_factor, last_right_speed_factor) == -2) // going reverse
       {
-        if (/*outlook_tail.isInRange()*/false)
+        if (outlook_tail.isInRange())
         {
           resp = Response::TailObstacle{};
           ///...
