@@ -20,7 +20,7 @@ Outlook outlook_head(16, 15, MAX_DISTANCE, LED_BUILTIN);
 
 /*  Bluetooth
   - Pin 14(A0) ---> TX // purple
-  - Pin 17(A3)  ---> RX // brown
+  - Pin 17(A3)  ---> RX // orange
   // ground - blk
   // vcc - white, gray - ground
 */
