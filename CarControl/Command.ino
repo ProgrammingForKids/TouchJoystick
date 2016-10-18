@@ -86,3 +86,23 @@ Speeds CommandTank::MotorsSpeed()
   return { _left.MotorSpeed(), _right.MotorSpeed() };
 }
 
+
+Command& Command::parse(byte b)
+{
+  static CommandTank tank{eProtocol::protoTank<<6};
+  static CommandPolar polar{eProtocol::protoPolar<<6};
+
+  eProtocol proto = eProtocol(b>>6);
+  if (proto == eProtocol::protoTank)
+  {
+    tank = CommandTank{b};
+    return tank;
+  }
+  else //if (proto == eProtocol::protoPolar)
+  {
+    polar = CommandPolar{b};
+    return polar;
+  }
+}
+
+
