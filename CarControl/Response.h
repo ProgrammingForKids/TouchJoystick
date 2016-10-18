@@ -2,6 +2,7 @@
 #define _ProgrammingForKids_TouchJoystick__Response_h__                                                                                                                  
 
 #include "Log.h"
+#include "Speeds.h"
 
 class Response                                                                                                                                                          
 {
@@ -14,7 +15,7 @@ public:
     SlowFwd = 3,
     FullFwd = 4
   };
-  
+
   struct HeadObstacle{ static const byte val = 0x01 << 7; };
   struct TailObstacle{ static const byte val = 0x01 << 6; };
 
@@ -26,6 +27,22 @@ private:
   eSpeed _right : 3;// right motor speed (see enum)
 
   bool _isSet;
+
+  static eSpeed Translate(short speed)
+  {
+    if (speed == 0)
+    {
+      return eSpeed::Idle;
+    }
+    else if (speed < 0)
+    {
+      return speed == Speeds::Min ? eSpeed::FullRev : SlowRev ;
+    }
+    else
+    {
+      return speed == Speeds::Max ? eSpeed::FullFwd : SlowFwd ;
+    }
+  }
 
 public:
   Response()
@@ -64,11 +81,11 @@ public:
   {
   }
   
-  Response(short left, short right)
+  Response(Speeds s)
   : _obstacle1(0)
   , _obstacle2(0)
-  , _left(static_cast<eSpeed>(left+2))
-  , _right(static_cast<eSpeed>(right+2))
+  , _left(Translate(s._l))
+  , _right(Translate(s._r))
   , _isSet(true)
   {
   }
