@@ -17,15 +17,15 @@ Speeds CommandPolar::MotorsSpeed()
   struct WheelProps
   {
     const int8_t sign : 1; // 0 for positive, 1 for negative
-    const int8_t shift : 1; // 0 for slow, 1 for fast
+    const int8_t shift : 1; // 1 for slow, 0 for fast
 
     short Sign() const { return (short)1 - sign - sign; }
   };
 
-  static const WheelProps FastFwd {0, 1};
-  static const WheelProps SlowFwd {0, 0};
-  static const WheelProps FastRev {1, 1};
-  static const WheelProps SlowRev {1, 0};
+  static const WheelProps FastFwd {0, 0};
+  static const WheelProps SlowFwd {0, 1};
+  static const WheelProps FastRev {1, 0};
+  static const WheelProps SlowRev {1, 1};
   
   const static WheelProps sector_factor[8][2] = {
     {FastFwd, FastFwd},
@@ -44,11 +44,11 @@ Speeds CommandPolar::MotorsSpeed()
   const static short speed_lut[8] = { 128, 146, 164, 182, 200, 218, 236, Speeds::Max };
   
   const WheelProps & left = sector_factor[_sector][0];
-  short left_speed = speed_lut[_speed + left.shift];
+  short left_speed = speed_lut[_speed - left.shift];
   left_speed *= left.Sign();
   
   const WheelProps & right = sector_factor[_sector][1];
-  short right_speed = speed_lut[_speed + right.shift];
+  short right_speed = speed_lut[_speed - right.shift];
   right_speed *= right.Sign();
 
   return { left_speed , right_speed };
@@ -85,4 +85,24 @@ Speeds CommandTank::MotorsSpeed()
 {
   return { _left.MotorSpeed(), _right.MotorSpeed() };
 }
+
+
+Command& Command::parse(byte b)
+{
+  static CommandTank tank{eProtocol::protoTank<<6};
+  static CommandPolar polar{eProtocol::protoPolar<<6};
+
+  eProtocol proto = eProtocol(b>>6);
+  if (proto == eProtocol::protoTank)
+  {
+    tank = CommandTank{b};
+    return tank;
+  }
+  else //if (proto == eProtocol::protoPolar)
+  {
+    polar = CommandPolar{b};
+    return polar;
+  }
+}
+
 

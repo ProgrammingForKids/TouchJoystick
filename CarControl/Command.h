@@ -10,7 +10,7 @@ struct Command
     protoTank = B01
   };
   
-  const eProtocol _protocol : 2;
+  eProtocol _protocol : 2;
 
   static Command& parse(byte b);
 
@@ -25,8 +25,8 @@ protected:
 
 struct CommandPolar : public Command
 {
-  const uint8_t _sector : 3;// 0 - means forward, counting clockwise
-  const uint8_t _speed : 3;//
+  uint8_t _sector : 3;// 0 - means forward, counting clockwise
+  uint8_t _speed : 3;//
 
   CommandPolar(byte b);
 
@@ -37,15 +37,15 @@ struct CommandTank : public Command
 {
   struct Track
   {
-    const bool _reverse : 1;
-    const uint8_t _speed : 2;
+    bool _reverse : 1;
+    uint8_t _speed : 2;
     Track(byte b);
 
     short MotorSpeed() const;
   };
   
-  const Track _left;
-  const Track _right;
+  Track _left;
+  Track _right;
 
   CommandTank(byte b);
   
