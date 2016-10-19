@@ -111,30 +111,19 @@ void TB6612FNG::Brake()
   doStandby();
 }
 
-void TB6612FNG::Go(unsigned short speedStep, unsigned short MaxSpeedStep, short leftFactor, short rightFactor)
+void TB6612FNG::Go(short leftSpeed, short rightSpeed)
 {
-  if (speedStep == 0)
+  if ((leftSpeed | rightSpeed) == 0)
   {
-    Log("TB6612FNG::Go received speedStep=0, stopping");
-    doStandby();
-    return;
-  }
-
-  if (0 == (leftFactor | rightFactor))
-  {
-    Log("TB6612FNG::Go received left==right==0, stopping");
+    Log("TB6612FNG::AbsGo received zero speed, stopping");
     doStandby();
     return;
   }
 
   doEnable();
-  static const int FIRST_GEAR=64;
-  static const int MAX_SPEED=255;
-  // all speed steps must fit in FIRST_GEAR ... MAX_SPEED range
-  int nSpeedQuantum = (MAX_SPEED - FIRST_GEAR) * speedStep / MaxSpeedStep + FIRST_GEAR;
   
-  _mLeft.Set(leftFactor * nSpeedQuantum / 2);
-  _mRight.Set(rightFactor * nSpeedQuantum / 2);
+  _mLeft.Set(leftSpeed);
+  _mRight.Set(rightSpeed);
   return;
 }
 

@@ -34,7 +34,8 @@ class TB6612FNG
     void begin();
 
     void Brake();
-    void Go(unsigned short speedStep, unsigned short MaxSpeedStep, short leftFactor, short rightFactor);
+
+    void Go(short leftSpeed, short rightSpeed); // must be in range -255..+255
     
   private:
     void doStandby();
