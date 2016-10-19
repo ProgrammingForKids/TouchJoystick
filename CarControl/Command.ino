@@ -16,16 +16,14 @@ Speeds CommandPolar::MotorsSpeed()
 
   struct WheelProps
   {
-    const int8_t sign : 1; // 0 for positive, 1 for negative
-    const int8_t shift : 1; // 1 for slow, 0 for fast
-
-    short Sign() const { return (short)1 - sign - sign; }
+    const int8_t sign; // 1 for positive, -1 for negative
+    const int8_t shift; // 1 for slow, 0 for fast
   };
 
-  static const WheelProps FastFwd {0, 0};
-  static const WheelProps SlowFwd {0, 1};
-  static const WheelProps FastRev {1, 0};
-  static const WheelProps SlowRev {1, 1};
+  static const WheelProps FastFwd {+1, 0};
+  static const WheelProps SlowFwd {+1, 1};
+  static const WheelProps FastRev {-1, 0};
+  static const WheelProps SlowRev {-1, 1};
   
   const static WheelProps sector_factor[8][2] = {
     {FastFwd, FastFwd},
@@ -45,11 +43,11 @@ Speeds CommandPolar::MotorsSpeed()
   
   const WheelProps & left = sector_factor[_sector][0];
   short left_speed = speed_lut[_speed - left.shift];
-  left_speed *= left.Sign();
+  left_speed *= left.sign;
   
   const WheelProps & right = sector_factor[_sector][1];
   short right_speed = speed_lut[_speed - right.shift];
-  right_speed *= right.Sign();
+  right_speed *= right.sign;
 
   return { left_speed , right_speed };
 }
