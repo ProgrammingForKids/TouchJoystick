@@ -35,9 +35,9 @@ public class SingleAxisJoystickControl extends View implements Runnable
 	private OnJoystickMoveListener	onJoystickMoveListener;											// Listener
 	private Thread					m_thread				= new Thread(this);
 	private long					m_loopInterval			= DEFAULT_LOOP_INTERVAL;
-	private int						yPosition				= 0;									// Touch y position
-	private double					centerX					= 0;									// Center view x position
-	private double					centerY					= 0;									// Center view y position
+	private int						m_yPosition				= 0;									// Touch y position
+	private double					m_centerX				= 0;									// Center view x position
+	private double					m_centerY				= 0;									// Center view y position
 	private double					m_congruence			= 0.98;
 	private Paint					m_buttonPaint;
 	private Paint					m_verticalLinePaint;
@@ -46,6 +46,7 @@ public class SingleAxisJoystickControl extends View implements Runnable
 	private int						m_ButtonDiameter		= 0;
 
 	SingleAxisJoystickControl		m_sibling				= null;
+	boolean							m_bTogether				= false;
 
 	public SingleAxisJoystickControl(Context context)
 	{
@@ -119,20 +120,13 @@ public class SingleAxisJoystickControl extends View implements Runnable
 			m_congruence = 0.9;
 		}
 
-		yPosition = (int) getHeight() / 2;
+		m_yPosition = (int) getHeight() / 2;
 		int d = Math.min(xNew, yNew);
 		m_ButtonRadius = (int) (d / 2 * 0.20);
 		m_ButtonDiameter = 2 * m_ButtonRadius;
-		// sasa m_JoystickLength = (int) (d / 2 * m_congruence);
 		m_JoystickLength = (int) (m_congruence * yNew / 2);
 
 	}
-
-	// @Override
-	// protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
-	// {
-	// super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-	// }
 
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec)
@@ -173,8 +167,8 @@ public class SingleAxisJoystickControl extends View implements Runnable
 	protected void onDraw(Canvas canvas)
 	{
 		super.onDraw(canvas);
-		centerX = (getWidth()) / 2;
-		centerY = (getHeight()) / 2;
+		m_centerX = (getWidth()) / 2;
+		m_centerY = (getHeight()) / 2;
 		if (null != m_gradation)
 		{
 			for (int k = 0; k < m_gradation.length; ++k)
@@ -183,17 +177,17 @@ public class SingleAxisJoystickControl extends View implements Runnable
 				float gradation = (float) (m_gradation[k] / 100.0);
 				canvas.drawRect(
 						(float) (m_ButtonDiameter),
-						(float) (centerY - m_JoystickLength * gradation),
-						(float) (2 * centerX - m_ButtonDiameter),
-						(float) (centerY + m_JoystickLength * gradation),
+						(float) (m_centerY - m_JoystickLength * gradation),
+						(float) (2 * m_centerX - m_ButtonDiameter),
+						(float) (m_centerY + m_JoystickLength * gradation),
 						m_gradationPaint[k]);
 			}
 		}
 
 		// m_gradationPaint lines
-		canvas.drawLine((float) centerX, (float) (m_JoystickLength + centerY), (float) centerX, (float) (centerY - m_JoystickLength), m_verticalLinePaint);
+		canvas.drawLine((float) m_centerX, (float) (m_JoystickLength + m_centerY), (float) m_centerX, (float) (m_centerY - m_JoystickLength), m_verticalLinePaint);
 		// painting the move m_buttonPaint
-		canvas.drawCircle((float) centerX, yPosition, m_ButtonRadius, m_buttonPaint);
+		canvas.drawCircle((float) m_centerX, m_yPosition, m_ButtonRadius, m_buttonPaint);
 	}
 
 	@SuppressLint("ClickableViewAccessibility")
@@ -201,10 +195,12 @@ public class SingleAxisJoystickControl extends View implements Runnable
 	public boolean onTouchEvent(MotionEvent event)
 	{
 		float x = event.getX();
-		if (x < m_ButtonDiameter || x > (2 * centerX - m_ButtonDiameter))
+		m_bTogether = false;
+		if (x < m_ButtonDiameter || x > (2 * m_centerX - m_ButtonDiameter))
 		{
 			if (null != m_sibling)
 			{
+				m_bTogether = true;
 				m_sibling.TouchEventHandler(event);
 			}
 		}
@@ -219,42 +215,42 @@ public class SingleAxisJoystickControl extends View implements Runnable
 			return false;
 		}
 
-		yPosition = (int) event.getY();
-		double abs = Math.abs(yPosition - centerY);
+		m_yPosition = (int) event.getY();
+		double abs = Math.abs(m_yPosition - m_centerY);
 		if (abs > m_JoystickLength)
 		{
-			yPosition = (int) ((yPosition - centerY) * m_JoystickLength / abs + centerY);
+			m_yPosition = (int) ((m_yPosition - m_centerY) * m_JoystickLength / abs + m_centerY);
 		}
 		invalidate();
 
-		if (event.getAction() == MotionEvent.ACTION_UP)
+		switch (event.getAction())
 		{
-			yPosition = (int) centerY;
-			m_thread.interrupt();
-			if (onJoystickMoveListener != null)
+			case MotionEvent.ACTION_UP:
 			{
-				onJoystickMoveListener.onValueChanged(GetValue());
-			}
-		}
-		if (event.getAction() == MotionEvent.ACTION_DOWN)
-		{
-			if (m_thread != null && m_thread.isAlive())
-			{
+				m_yPosition = (int) m_centerY;
 				m_thread.interrupt();
+				onJoystickMoveListener.onValueChanged(GetValue(), m_bTogether);
+				break;
 			}
-			m_thread = new Thread(this);
-			m_thread.start();
-			if (onJoystickMoveListener != null)
+			case MotionEvent.ACTION_DOWN:
 			{
-				onJoystickMoveListener.onValueChanged(GetValue());
+				if (m_thread != null && m_thread.isAlive())
+				{
+					m_thread.interrupt();
+				}
+				m_thread = new Thread(this);
+				m_thread.start();
+				break;
 			}
+			default:
+				break;
 		}
 		return true;
 	}
 
 	private int GetValue()
 	{
-		return (int) (MAX_VALUE * (centerY - yPosition) / m_JoystickLength);
+		return (int) (MAX_VALUE * (m_centerY - m_yPosition) / m_JoystickLength);
 	}
 
 	public void setOnJoystickMoveListener(OnJoystickMoveListener listener, long repeatInterval)
@@ -265,7 +261,7 @@ public class SingleAxisJoystickControl extends View implements Runnable
 
 	public interface OnJoystickMoveListener
 	{
-		public void onValueChanged(int power);
+		public void onValueChanged(int power, boolean bTogether);
 	}
 
 	@Override
@@ -279,7 +275,7 @@ public class SingleAxisJoystickControl extends View implements Runnable
 				{
 					if (onJoystickMoveListener != null)
 					{
-						onJoystickMoveListener.onValueChanged(GetValue());
+						onJoystickMoveListener.onValueChanged(GetValue(), m_bTogether);
 					}
 				}
 			});
