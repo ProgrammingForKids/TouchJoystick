@@ -1,10 +1,12 @@
 #include "Command.h"
+#include "Log.h"
 
 CommandPolar::CommandPolar(byte b)
 : Command(Command::eProtocol::protoPolar)
 , _sector((b&B00111000)>>3)
 , _speed(b&B00000111)
 {
+  Log("CommandPolar [sector=")(_sector)(", speed=")(_speed)(']');
 }
 
 
@@ -77,6 +79,8 @@ CommandTank::CommandTank(byte b)
 , _left((b&B00111000)>>3)
 , _right(b&B00000111)
 {
+  Log("CommandTank [Left=[")(_left._reverse?"Rev ":"Fwd ")(_left._speed)("] Right=[")
+    (_right._reverse?"Rev ":"Fwd ")(_right._speed)("]]");
 }
 
 Speeds CommandTank::MotorsSpeed()
