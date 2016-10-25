@@ -75,7 +75,7 @@ public class CommandSender
 
 				while (m_keepRunning.get())
 				{
-					Logger.Log.t("SEND 305", Integer.toHexString(m_byte.byteValue() & 0xFF), m_Received);
+					//Logger.Log.t("SEND 305", Integer.toHexString(m_byte.byteValue() & 0xFF), m_Received);
 					
 					byte command = 0;
 					boolean bReceived = false;

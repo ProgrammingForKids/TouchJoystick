@@ -5,9 +5,9 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Joystick"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/Logger"/>
 	<classpathentry exported="true" kind="lib" path="/Logger/bin/logger.jar"/>
-	<classpathentry exported="true" kind="lib" path="/Joystick/bin/joystick.jar"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/SingleAxisJoystick"/>
+	<classpathentry exported="true" kind="lib" path="/SingleAxisJoystick/bin/singleaxisjoystick.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

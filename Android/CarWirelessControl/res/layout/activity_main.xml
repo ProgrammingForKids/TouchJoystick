@@ -2,6 +2,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     android:orientation="vertical"
     tools:context="com.control.ui.MainActivity" >
 
@@ -38,7 +39,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@android:color/white"
-            android:orientation="horizontal" >
+            android:orientation="horizontal"
+            android:visibility="gone" >
 
             <TextView
                 android:id="@+id/textView1"
@@ -77,10 +79,27 @@
         </LinearLayout>
     </LinearLayout>
 
-    <com.sasa.joystick.JoystickControl
-        android:id="@+id/joystickView"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" />
+        android:background="@drawable/border"
+        android:baselineAligned="false"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:weightSum="1.0" >
+
+        <com.sasa.singleaxisjoystick.SingleAxisJoystickControl
+            android:id="@+id/joystickViewLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5" />
+
+        <com.sasa.singleaxisjoystick.SingleAxisJoystickControl
+            android:id="@+id/joystickViewRight"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.5" />
+
+    </LinearLayout>
 
 </LinearLayout>

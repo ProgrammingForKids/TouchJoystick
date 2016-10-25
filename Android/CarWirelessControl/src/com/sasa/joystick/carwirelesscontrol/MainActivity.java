@@ -4,9 +4,10 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import com.car.wirelesscontrol.util.*;
-import com.sasa.joystick.JoystickControl;
-import com.sasa.joystick.JoystickControl.OnJoystickMoveListener;
+
 import com.sasa.logger.Logger;
+import com.sasa.singleaxisjoystick.SingleAxisJoystickControl;
+import com.sasa.singleaxisjoystick.SingleAxisJoystickControl.OnJoystickMoveListener;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -28,7 +29,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -36,29 +36,26 @@ import android.widget.AdapterView.OnItemClickListener;
 
 public class MainActivity extends Activity implements BlueToothHelper.Callback
 {
-	private BlueToothHelper		m_bth			= null;
-	private CommandSender		m_csend			= null;
-	private BroadcastReceiver	m_receiver		= null;
-	private JoystickControl		m_joystick		= null;
-	private TextView			m_byte_command	= null;
-	private ImageView			mImageView		= null;
-	private byte				m_comm			= 0;
-//	private byte				m_speed			= 0;
-//	private byte				m_sector		= 0;
-	private final SoundHelper	m_sound			= new SoundHelper();
+	private BlueToothHelper				m_bth			= null;
+	private CommandSender				m_csend			= null;
+	private BroadcastReceiver			m_receiver		= null;
+	private SingleAxisJoystickControl	joystickLeft;
+	private SingleAxisJoystickControl	joystickRight;
+	private TextView					m_byte_command	= null;
+	private final SoundHelper			m_sound			= new SoundHelper();
 
-	private final int			m_imgCount		= 6;
-	private final double		m_dd			= 1.0 + JoystickControl.POWER_MAX / m_imgCount;
-	// private final int m_imgId[] = { R.drawable.car0, R.drawable.car1, R.drawable.car2, R.drawable.car3, R.drawable.car4, R.drawable.car5 };
-	private final int			m_imgId[]		= { R.drawable.c0, R.drawable.c1, R.drawable.c2, R.drawable.c3, R.drawable.c4, R.drawable.c5, R.drawable.c6, R.drawable.c7 };
+	private final int					max_count_click	= 5;
+	private int							m_count_click	= 0;
+	private boolean						mTrace			= false;
+	private MenuItem					m_adlistItem	= null;
+	private MenuItem					m_actCurrent	= null;
+	private TextView					m_prompt		= null;
+	private LinearLayout				m_traceArea		= null;
 
-	private final int			max_count_click	= 5;
-	private int					m_count_click	= 0;
-	private boolean				mTrace			= false;
-	private MenuItem			m_adlistItem	= null;
-	private MenuItem			m_actCurrent	= null;
-	private TextView			m_prompt		= null;
-	private LinearLayout		m_traceArea		= null;
+	private Integer[]					m_gradation		= { 10, 100, 30, 60 };
+	private int							m_valueleft		= 0;
+	private int							m_valueright	= 0;
+	private byte						m_byte			= 0;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState)
@@ -68,6 +65,7 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		m_bth = new BlueToothHelper(this, this);
 		m_csend = new CommandSender(m_bth);
 		m_byte_command = (TextView) findViewById(R.id.byte_to_bt);
+		m_byte_command.setText(CommandByteBuilder.ByteToStr((byte) 0) + ";left: " + m_valueleft + "; right: " + m_valueright);
 
 		m_traceArea = (LinearLayout) findViewById(R.id.traceArea);
 		m_prompt = (TextView) findViewById(R.id.promptTextView);
@@ -84,48 +82,42 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 			}
 		});
 		m_traceArea.setVisibility((mTrace) ? View.VISIBLE : View.GONE);
-		mImageView = (ImageView) findViewById(R.id.carImageView);
 
-		m_joystick = (JoystickControl) findViewById(R.id.joystickView);
-		m_joystick.SetAngleRangeMode(true);
-		m_joystick.setOnJoystickMoveListener(new OnJoystickMoveListener()
+		joystickLeft = (SingleAxisJoystickControl) findViewById(R.id.joystickViewLeft);
+		joystickLeft.SetGradation(m_gradation);
+		joystickLeft.setOnJoystickMoveListener(new OnJoystickMoveListener()
 		{
 
 			@Override
-			public void onValueChanged(int angle, int power, int direction)
+			public void onValueChanged(int value, boolean bTogether)
 			{
-				byte t = CommandByteBuilder.PrepareCommandByte(angle, power);
-				if (m_comm != t)
+				m_valueleft = value;
+				if (bTogether)
 				{
-					m_comm = t;
-					m_csend.Send(m_comm);
-					SetPrompt("\u21fd" + CommandByteBuilder.ByteToStr(m_comm) + "\n");
-
+					m_valueright = value;
 				}
-				// byte speed = (byte) (t >> 4);
-				// if (m_speed != speed)
-				// {
-				//
-				// m_speed = speed;
-				// DrawImg(power);
-				// }
-				// byte sector = (byte) (t & 0xF);
-				// if (m_sector != sector)
-				// {
-				// m_sector = sector;
-				// ShowImage();
-				// // mImageView.setRotation(angle);
-				// }
-				String res = "";
-				res = " " + CommandByteBuilder.ByteToStr(m_comm);
-				res += ("; " + String.valueOf(angle) + "°");
-				res += ("; " + String.valueOf(power) + "%");
-				m_byte_command.setText(res);
-				// Logger.Log.t("Direction",JoystickControl.DirectionToPrompt(direction));
+				BuildAndSendCommand();
+			}
+		}, SingleAxisJoystickControl.DEFAULT_LOOP_INTERVAL);
+		joystickRight = (SingleAxisJoystickControl) findViewById(R.id.joystickViewRight);
+		joystickRight.SetGradation(m_gradation);
+		joystickRight.setOnJoystickMoveListener(new OnJoystickMoveListener()
+		{
+
+			@Override
+			public void onValueChanged(int value, boolean bTogether)
+			{
+				m_valueright = value;
+				if (bTogether)
+				{
+					m_valueleft = value;
+				}
+				BuildAndSendCommand();
 			}
 
-		}, JoystickControl.DEFAULT_LOOP_INTERVAL);
-
+		}, SingleAxisJoystickControl.DEFAULT_LOOP_INTERVAL);
+		joystickLeft.SetSibling(joystickRight);
+		joystickRight.SetSibling(joystickLeft);
 		m_receiver = new BroadcastReceiver()// Create a BroadcastReceiver for ACTION_FOUND
 		{
 			public void onReceive(Context context, Intent intent)
@@ -201,6 +193,13 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		{
 			unregisterReceiver(m_receiver);
 		}
+	}
+
+	private void BuildAndSendCommand()
+	{
+		m_byte = CommandByteBuilder.PrepareCommandBytelt(m_valueleft, m_valueright);
+		m_byte_command.setText(CommandByteBuilder.ByteToStr(m_byte) + ";left: " + m_valueleft + "; right: " + m_valueright);
+		m_csend.Send(m_byte);
 	}
 
 	private void ShowBondedDeviceList()
@@ -357,26 +356,6 @@ public class MainActivity extends Activity implements BlueToothHelper.Callback
 		window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
 		window.setGravity(Gravity.CENTER_HORIZONTAL);
 
-	}
-
-//	private void ShowImage()
-//	{
-//		 int k = CommandByteBuilder.Sector();
-//		 Logger.Log.t("RUMB", k);
-//		 mImageView.setImageResource(m_imgId[k]);
-//	}
-//
-	void DrawImg(int power)
-	{
-
-		for (int k = 0; k < m_imgCount; ++k)
-		{
-			if ((m_dd * k) <= power && power < m_dd * (k + 1))
-			{
-				mImageView.setImageResource(m_imgId[k]);
-				break;
-			}
-		}
 	}
 
 	public void SetPrompt(String txt)

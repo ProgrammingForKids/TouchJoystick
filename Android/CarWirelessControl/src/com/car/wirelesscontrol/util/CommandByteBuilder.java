@@ -1,6 +1,6 @@
 package com.car.wirelesscontrol.util;
 
-import com.sasa.joystick.JoystickControl;
+import com.sasa.singleaxisjoystick.SingleAxisJoystickControl;
 
 public class CommandByteBuilder
 {
@@ -8,44 +8,54 @@ public class CommandByteBuilder
 	public static int	MAX_NUMBER_OF_SECTORS	= 8;
 	private static byte	m_sec;
 
+	public static byte Digitize(int value)
+	{
+		byte res = 0;
+		boolean sign = (value < 0);
+		int v = Math.abs(value);
+
+		if ((SingleAxisJoystickControl.MAX_VALUE / 10) < v && v < (SingleAxisJoystickControl.MAX_VALUE / 3))
+		{
+			res = 1;
+		}
+		else if ((SingleAxisJoystickControl.MAX_VALUE / 3) < v && v < (2 * SingleAxisJoystickControl.MAX_VALUE / 3))
+		{
+			res = 2;
+		}
+		else if (v > (2 * SingleAxisJoystickControl.MAX_VALUE / 3))
+		{
+			res = 3;
+		}
+		if (sign)
+		{
+			res = (byte) (res|1<<2);
+		}
+		return res;
+	}
+
+	public static byte PrepareCommandBytelt(int left, int right)
+	{
+		byte l = Digitize(left);
+		byte r = Digitize(right);
+
+		byte res = (byte) (l << 3 | r);
+
+		res = (byte) (res | (1 << 6));
+
+		return res;
+
+	}
+	
+	
+	
+	
+	
+	
 	public static byte Sector()
 	{
 		return m_sec;
 	}
 
-	// -------------------------------------------------
-	// bit 7 -> 0 - forward, 1 - backward
-	// bit 6 -> 0 - right, 1 - left
-	// bits 5,4,3,2 -> forward/backward speed value
-	// bits 1,0 ->right/left speed value
-	// -------------------------------------------------
-	public static byte PrepareCommandByteOld(int angle, int power, int direction)
-	{
-		double Y = power * Math.cos(Math.toRadians(angle));
-		double X = power * Math.sin(Math.toRadians(angle));
-		int y = (int) (Y * 16) / JoystickControl.POWER_MAX;
-		int x = (int) (X * 4) / JoystickControl.POWER_MAX;
-		byte by = (byte) Math.abs(y);
-		byte bx = (byte) Math.abs(x);
-		if (by == 16)
-		{
-			by = 15;
-		}
-		if (bx == 4)
-		{
-			bx = 3;
-		}
-		byte bp = (byte) ((by << 2) | bx);
-		if (0 > Y)
-		{
-			bp = (byte) (bp | (1 << 7));
-		}
-		if (0 > X)
-		{
-			bp = (byte) (bp | (1 << 6));
-		}
-		return bp;
-	}
 
 	public static byte GetSector(int angle)
 	{
@@ -58,12 +68,13 @@ public class CommandByteBuilder
 
 	public static byte GetSpeed(int power)
 	{
-		byte speed = (byte) ((power * 16) / JoystickControl.POWER_MAX);
-		if (speed == 16)
-		{
-			speed = 15;
-		}
-		return speed;
+//		byte speed = (byte) ((power * 16) / JoystickControl.POWER_MAX);
+//		if (speed == 16)
+//		{
+//			speed = 15;
+//		}
+//		return speed;
+		return 0;
 	}
 
 	public static byte PrepareCommandByte(int angle, int power)
@@ -82,8 +93,8 @@ public class CommandByteBuilder
 		{
 			sb.append((bt >> (7 - k)) & 1);
 		}
-		String x = Integer.toHexString(bt & 0xFF);
-		return sb.toString() + " : " + bt + " : " + x;
+		//String x = Integer.toHexString(bt & 0xFF);
+		return sb.toString();// + " : " + bt + " : " + x;
 	}
 
 }// class CommandByteBuilder
